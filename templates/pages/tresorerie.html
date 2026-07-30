@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block content%}
+<title>MP Manager</title>
+<h1>{{title|default:'Not found'}}</h1> <!-- capfirst,  --->
+<img src="{% static 'IMAGE/fin_logo.png' %}" alt="Logo" width="50" height="50">
+{% endblock content%}
+
+
+{% comment %} <html>
+<head>
+    <title>MP Manager</title>
+</head>
+<body>
+    <h1>{{title|default:'Not found'}}</h1> <!-- capfirst,  --->
+    <p>Ceci est la page de trésorerie.</p>
+</body>
+</html> {% endcomment %}

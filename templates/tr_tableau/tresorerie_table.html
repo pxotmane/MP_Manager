@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Trésorerie{% endblock %}
+
+{% block content %}
+    <h1>Trésorerie</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>OP</th>
+                <th>OV</th>
+                <th>Exercice</th>
+                <th>Budget</th>
+                <th>Ligne budgétaire</th>
+                <th>Code</th>
+                <th>Nature</th>
+                <th>Bénéficiaires</th>
+                <th>Montant</th>
+                <th>Date de rejet</th>
+                <th>Numéro de rejet</th>
+                <th>Date de visa</th>
+                <th>Date de décaissement</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tresorerie in tresorerie_list %}
+            <tr>
+                <td>{{ tresorerie.op }}</td>
+                <td>{{ tresorerie.ov }}</td>
+                <td>{{ tresorerie.exercice }}</td>
+                <td>{{ tresorerie.budget }}</td>
+                <td>{{ tresorerie.ligne_budgetaire }}</td>
+                <td>{{ tresorerie.code }}</td>
+                <td>{{ tresorerie.nature }}</td>
+                <td>{{ tresorerie.beneficiaires }}</td>
+                <td>{{ tresorerie.montant }}</td>
+                <td>{{ tresorerie.date_rejet }}</td>
+                <td>{{ tresorerie.num_rejet }}</td>
+                <td>{{ tresorerie.date_visa }}</td>
+                <td>{{ tresorerie.date_decaissement }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}

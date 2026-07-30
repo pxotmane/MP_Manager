@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<title>MP Manager</title>
+<h1>{{title|default:'Not found'}}</h1> <!-- capfirst,  --->
+<img src="{% static 'IMAGE/fin_logo.png' %}" alt="Logo" width="50" height="50">
+
+{% if title == 'Tableau de bord'%}
+    <p>Bienvenue sur le tableau de bord !</p>
+{% elif title == 'Gestion des utilisateurs' %}
+    <p>Bienvenue sur la page de gestion des utilisateurs !</p>
+{% elif title == 'Gestion des produits' %}
+    <p>Bienvenue sur la page de gestion des produits !</p>
+{% else %}
+    <p>Bienvenue sur la page d'accueil !</p>
+{% endif %}
+
+{% for element in elements %}
+    <p>{{ element }}</p>
+{% endfor %}
+
+{% endblock content%}
+
+
+{% comment %} <html>
+<head>
+    <title>MP Manager</title>
+</head>
+<body>
+    <h1>{{title|default:'Not found'}}</h1> <!-- capfirst,  --->
+    <p>Ceci est la page d'accueil.</p>
+</body>
+</html>
+
+<!-- IGNORE --->
+ {% endcomment %}
