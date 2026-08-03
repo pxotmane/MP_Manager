@@ -1,5 +1,8 @@
+{% load django_bootstrap5 %}
 {% load static %}
+{% bootstrap_css %}
 <link rel="stylesheet" href="{% static 'CSS/style.css' %}">
+{% bootstrap_javascript %}
 
 <!-- include navbar -->
 {% include 'parts/navbar.html' %}

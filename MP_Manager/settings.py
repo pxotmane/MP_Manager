@@ -32,6 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'django_bootstrap5', #Add the django-bootstrap5 app to the list of installed apps
     'pages.apps.PagesConfig', #Add the Pages app to the list of installed apps
     'tresorerie.apps.TresorerieConfig', #Add the Tresorerie app to the list of installed apps
     'marche.apps.MarcheConfig', #Add the Marche app to the list of installed apps

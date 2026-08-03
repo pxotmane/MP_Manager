@@ -24,7 +24,8 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
-from django.db.models import Exists, F, OuterRef
+from django.db.models import Exists, F, OuterRef, Value, ExpressionWrapper
+from django.db.models.functions import Coalesce
 from core.coreFcn import HorodatageMixin, DocumentLieAuMarche
 
 rib_validator = RegexValidator(
@@ -108,6 +109,7 @@ class FicheMarche(HorodatageMixin):
     montant_ht = models.DecimalField(
         max_digits=14,
         decimal_places=2,
+        default=Decimal("0.00"),
         validators=[MinValueValidator(0)],
         verbose_name="Montant hors taxe",
     )
@@ -125,45 +127,60 @@ class FicheMarche(HorodatageMixin):
             # "multiplication par une simple addition du montant de TVA)."
         
     )
-    rabais = models.DecimalField(
+    taux_rabais = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=0,
+        default=Decimal("0.00"),
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         verbose_name="Rabais",
         help_text="En pourcentage, exemple: 12.45",
     )
-    majoration = models.DecimalField(
+    taux_majoration = models.DecimalField(
         max_digits=5,
         decimal_places=2,
-        default=0,
+        default=Decimal("0.00"),
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         verbose_name="Majoration",
         help_text="En pourcentage, exemple: 14.05",
     )
     avenant = models.DecimalField(
-        max_digits=14, decimal_places=2, default=0, verbose_name="Montant des avenants"
+        max_digits=7, decimal_places=2, default=Decimal("0.00"), verbose_name="Montant des avenants"
     )
-    montant_global_ttc = models.GeneratedField(
-        expression=(
-            F("montant_ht")
-            * (1 + F("taux_tva") / 100)
-            * (1 - F("rabais") / 100)
-            * (1 + F("majoration") / 100)
-            + F("avenant")
-        ),
-        verbose_name="Montant global TTC",
-        output_field=models.DecimalField(max_digits=14, decimal_places=2),
-        db_persist=True,
-        
-            # "Montant TTC (HT, TVA, rabais et majoration) + avenant, calculé directement par "
-            # "la base de données en une seule formule. Fusionne les anciens montant_ttc et "
-            # "montant_global_ttc : un GeneratedField ne peut pas référencer un autre "
-            # "GeneratedField (contrainte Django, confirmée par une erreur PostgreSQL à la "
-            # "migration : 'cannot use generated column ... in column generation expression'). "
-            # "Voir la propriété montant_ttc ci-dessous pour la valeur hors avenant."
-        
+    montant_global_ttc = models.DecimalField(
+        max_digits=14, decimal_places=2, default=Decimal("0.00"), null=True, blank=True, verbose_name="Montant global TTC"
     )
+    def calculer_ttc(self):
+            """
+            Montant TTC =
+            (Montant HT × (1 + TVA) × ((1 - Rabais) ou (1 + Majoration))) + Avenant
+            """
+    
+            ht = self.montant_ht
+            tva = self.taux_tva / Decimal("100")
+            rabais = self.taux_rabais / Decimal("100")
+            majoration = self.taux_majoration / Decimal("100")
+    
+            # TVA
+            montant = ht * (Decimal("1") + tva)
+    
+            # Rabais ou majoration
+            if rabais > 0:
+                montant *= (Decimal("1") - rabais)
+            elif majoration > 0:
+                montant *= (Decimal("1") + majoration)
+    
+            # Avenant
+            montant += self.avenant
+    
+            return montant.quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
+    def save(self, *args, **kwargs):
+                self.montant_global_ttc = self.calculer_ttc()
+                super().save(*args, **kwargs)
+
+
     caution_provisoire = models.DecimalField(
         max_digits=14, decimal_places=2, null=True, blank=True, verbose_name="Caution provisoire"
     )
@@ -201,13 +218,6 @@ class FicheMarche(HorodatageMixin):
         Non interrogeable via l'ORM (pas de .filter(montant_ttc=...) possible) ;
         pour un filtrage en base, passer par une annotation dédiée si besoin.
         """
-        montant = (
-            self.montant_ht
-            * (1 + self.taux_tva / 100)
-            * (1 - self.rabais / 100)
-            * (1 + self.majoration / 100)
-        )
-        return montant.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
 
     @property
     def est_nanti(self):
@@ -220,7 +230,6 @@ class FicheMarche(HorodatageMixin):
         seule requête plutôt qu'une par instance.
         """
         return self.nantissements.exists()
-
 
 class Nantissement(DocumentLieAuMarche):
     """
@@ -267,7 +276,6 @@ class Nantissement(DocumentLieAuMarche):
     def __str__(self):
         return f"Nantissement {self.num_acte} - Marché {self.marche.num_marche}"
 
-
 class Penalite(DocumentLieAuMarche):
     """
     Feuille Excel PENALITE -- pénalités financières liées à un marché.
@@ -294,3 +302,4 @@ class Penalite(DocumentLieAuMarche):
 
     def __str__(self):
         return f"Pénalité {self.num_penalite} - Marché {self.marche.num_marche}"
+

@@ -41,6 +41,23 @@ class Tresorerie(models.Model):
         ),
     )
     nature = models.CharField(max_length=50, choices=Nature.choices, verbose_name="Nature")
+    # 1. Le menu déroulant pour les Marchés (Relation)
+    marche = models.ForeignKey(
+        "marche.FicheMarche",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        verbose_name="Numéro de marché"
+    )
+
+    # 2. Le champ texte pour les Bons de commande, Conventions, etc.
+    reference_document = models.CharField(
+        max_length=100,
+        null=True,
+        blank=True,
+        verbose_name="Référence",
+        help_text="N° Bons de commande, n°Conventions, etc. (hors Marchés, heures supp, indemnités)."
+    )
     beneficiaires = models.CharField(max_length=255, verbose_name="Bénéficiaires")
     montant = models.DecimalField(max_digits=14, decimal_places=2, verbose_name="Montant de décompte")
     date_rejet = models.DateField(null=True, blank=True, verbose_name="Date de rejet")
