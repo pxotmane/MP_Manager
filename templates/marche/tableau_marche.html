@@ -2,6 +2,26 @@
 {% load static %}
 {% block title %}Liste des Marchés{% endblock %}
 
-{% block content %}
 
+{% block content %}
+<h1>Liste des Marchés</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nom du Marché</th>
+            <th>Description</th>
+            <th>Date de Création</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for marche in marches %}
+        <tr>
+            <td>{{ marche.id }}</td>
+            <td>{{ marche.nom }}</td>
+            <td>{{ marche.description }}</td>
+            <td>{{ marche.date_creation }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
 {% endblock %}
