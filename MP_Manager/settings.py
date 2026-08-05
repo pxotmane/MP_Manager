@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'login.apps.LoginConfig', #Add the Login app to the list of installed apps
+    # 'login.apps.LoginConfig', #Add the Login app to the list of installed apps
     'django_bootstrap5', #Add the django-bootstrap5 app to the list of installed apps
     'pages.apps.PagesConfig', #Add the Pages app to the list of installed apps
     'tresorerie.apps.TresorerieConfig', #Add the Tresorerie app to the list of installed apps
@@ -54,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'MP_Manager.middleware.LoginRequiredMiddleware',
 ]
 
 ROOT_URLCONF = 'MP_Manager.urls'
@@ -129,5 +130,5 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'MP_Manager/static')
 ]
 LOGIN_URL = 'login'
-LOGIN_REDIRECT_URL = 'index'
+LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = 'login'
