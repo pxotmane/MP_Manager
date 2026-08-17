@@ -6,13 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tresorerie', '0002_alter_tresorerie_options'),
+        ("tresorerie", "0002_alter_tresorerie_options"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='tresorerie',
-            name='nature',
-            field=models.CharField(choices=[('MARCHE', 'Marché'), ('HEURES_SUPP', 'Heures supplémentaires'), ('BON COMMANDE', 'Bon de commande'), ('CONVENTION', 'Convention'), ('FRAIS AUTORISATION', 'Frais autorisations'), ('INSERSTION', 'Insertion'), ('INDEMNITE DEPLACEMENT', 'Indemnité de déplacement')], max_length=50, verbose_name='Nature'),
+            model_name="tresorerie",
+            name="nature",
+            field=models.CharField(
+                choices=[
+                    ("MARCHE", "Marché"),
+                    ("HEURES_SUPP", "Heures supplémentaires"),
+                    ("BON COMMANDE", "Bon de commande"),
+                    ("CONVENTION", "Convention"),
+                    ("FRAIS AUTORISATION", "Frais autorisations"),
+                    ("INSERSTION", "Insertion"),
+                    ("INDEMNITE DEPLACEMENT", "Indemnité de déplacement"),
+                ],
+                max_length=50,
+                verbose_name="Nature",
+            ),
         ),
     ]

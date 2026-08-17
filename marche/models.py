@@ -33,6 +33,7 @@ rib_validator = RegexValidator(
     message="Un RIB marocain comporte exactement 24 chiffres.",
 )
 
+
 class FicheMarcheQuerySet(models.QuerySet):
     def avec_statut_nantissement(self):
         """
@@ -44,8 +45,11 @@ class FicheMarcheQuerySet(models.QuerySet):
         en lecture seule (testé -- lève AttributeError sinon).
         """
         return self.annotate(
-            nantissement_existe=Exists(Nantissement.objects.filter(marche=OuterRef("pk")))
+            nantissement_existe=Exists(
+                Nantissement.objects.filter(marche=OuterRef("pk"))
+            )
         )
+
 
 class FicheMarche(HorodatageMixin):
     """Feuille Excel FICHE_MARCHE -- fiche administrative et financière d'un marché."""
@@ -68,17 +72,29 @@ class FicheMarche(HorodatageMixin):
         MARCHE_CADRE = "MARCHE_CADRE", "Marché cadre"
         MARCHE_RECONDUCTIBLE = "MARCHE_RECONDUCTIBLE", "Marché reconductible"
         MARCHE_ALLOTIS = "MARCHE_ALLOTIS", "Marché alloti"
-        MARCHE_CONCEP_REALISATION = "MARCHE_CONCEP_REALISATION", "Marché conception-réalisation"
-        MARCHE_TRANCHES_CONDITIONNELLES = "MARCHE_TRANCHES_CONDITIONNELLES", "Marché à tranches conditionnelles"
+        MARCHE_CONCEP_REALISATION = (
+            "MARCHE_CONCEP_REALISATION",
+            "Marché conception-réalisation",
+        )
+        MARCHE_TRANCHES_CONDITIONNELLES = (
+            "MARCHE_TRANCHES_CONDITIONNELLES",
+            "Marché à tranches conditionnelles",
+        )
         DIALOGUE_COMPETITIF = "DIALOGUE_COMPETITIF", "Dialogue compétitif"
         OFFRE_SPONTANEE = "OFFRE_SPONTANEE", "Offre spontanée"
 
     objects = FicheMarcheQuerySet.as_manager()
 
-    num_marche = models.CharField(max_length=50, unique=True, verbose_name="Numéro de marché")
-    type_budget = models.CharField(max_length=5, choices=TypeBudget.choices, verbose_name="Type de budget")
+    num_marche = models.CharField(
+        max_length=50, unique=True, verbose_name="Numéro de marché"
+    )
+    type_budget = models.CharField(
+        max_length=5, choices=TypeBudget.choices, verbose_name="Type de budget"
+    )
     imputation_budgetaire = models.CharField(
-        max_length=50, verbose_name="Imputation budgétaire", help_text="Exemple : 980.912.50.53"
+        max_length=50,
+        verbose_name="Imputation budgétaire",
+        help_text="Exemple : 980.912.50.53",
     )
     objet = models.TextField(verbose_name="Objet du marché")
     titulaire = models.CharField(max_length=255, verbose_name="Titulaire du marché")
@@ -91,21 +107,25 @@ class FicheMarche(HorodatageMixin):
     exercice_budgetaire = models.PositiveSmallIntegerField(
         verbose_name="Exercice budgétaire",
         db_index=True,
-        #Une année tient dans un PositiveSmallIntegerField (jusqu'à 32767) ; inutile de réserver un IntegerField complet.
+        # Une année tient dans un PositiveSmallIntegerField (jusqu'à 32767) ; inutile de réserver un IntegerField complet.
     )
     rib = models.CharField(
         max_length=24,
         validators=[rib_validator],
         verbose_name="RIB",
-        
-            # "24 chiffres. Stocké en CharField (et non INT comme indiqué dans le fichier "
-            # "source) pour préserver les zéros non significatifs et éviter un dépassement "
-            # "de capacité d'un champ entier."
-        
+        # "24 chiffres. Stocké en CharField (et non INT comme indiqué dans le fichier "
+        # "source) pour préserver les zéros non significatifs et éviter un dépassement "
+        # "de capacité d'un champ entier."
     )
-    dom_bancaire = models.CharField(max_length=255, verbose_name="Domiciliation bancaire")
-    date_notif_appro = models.DateField(null=True, blank=True, verbose_name="Date de notification d'approbation")
-    delai_execution = models.PositiveIntegerField(verbose_name="Délai d'exécution (mois)")
+    dom_bancaire = models.CharField(
+        max_length=255, verbose_name="Domiciliation bancaire"
+    )
+    date_notif_appro = models.DateField(
+        null=True, blank=True, verbose_name="Date de notification d'approbation"
+    )
+    delai_execution = models.PositiveIntegerField(
+        verbose_name="Délai d'exécution (mois)"
+    )
     montant_ht = models.DecimalField(
         max_digits=14,
         decimal_places=2,
@@ -119,13 +139,12 @@ class FicheMarche(HorodatageMixin):
         default=Decimal("20.00"),
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         verbose_name="Taux de TVA",
-            # "En pourcentage (ex. 20.00 pour 20%). Anciennement `tva`, dimensionné comme un "
-            # "montant (max_digits=14) mais utilisé comme un taux dans la formule du TTC "
-            # "(division par 100) -- renommé et redimensionné en conséquence. Si le fichier "
-            # "source désigne en réalité un montant de TVA en dirhams (et non un taux), la "
-            # "formule de montant_global_ttc ci-dessous doit être revue (remplacer la "
-            # "multiplication par une simple addition du montant de TVA)."
-        
+        # "En pourcentage (ex. 20.00 pour 20%). Anciennement `tva`, dimensionné comme un "
+        # "montant (max_digits=14) mais utilisé comme un taux dans la formule du TTC "
+        # "(division par 100) -- renommé et redimensionné en conséquence. Si le fichier "
+        # "source désigne en réalité un montant de TVA en dirhams (et non un taux), la "
+        # "formule de montant_global_ttc ci-dessous doit être revue (remplacer la "
+        # "multiplication par une simple addition du montant de TVA)."
     )
     taux_rabais = models.DecimalField(
         max_digits=5,
@@ -144,55 +163,76 @@ class FicheMarche(HorodatageMixin):
         help_text="En pourcentage, exemple: 14.05",
     )
     avenant = models.DecimalField(
-        max_digits=7, decimal_places=2, default=Decimal("0.00"), verbose_name="Montant des avenants"
+        max_digits=7,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Montant des avenants",
     )
     montant_global_ttc = models.DecimalField(
-        max_digits=14, decimal_places=2, default=Decimal("0.00"), null=True, blank=True, verbose_name="Montant global TTC"
+        max_digits=14,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        null=True,
+        blank=True,
+        verbose_name="Montant global TTC",
     )
-    def calculer_ttc(self):
-            """
-            Montant TTC =
-            (Montant HT × (1 + TVA) × ((1 - Rabais) ou (1 + Majoration))) + Avenant
-            """
-    
-            ht = self.montant_ht
-            tva = self.taux_tva / Decimal("100")
-            rabais = self.taux_rabais / Decimal("100")
-            majoration = self.taux_majoration / Decimal("100")
-    
-            # TVA
-            montant = ht * (Decimal("1") + tva)
-    
-            # Rabais ou majoration
-            if rabais > 0:
-                montant *= (Decimal("1") - rabais)
-            elif majoration > 0:
-                montant *= (Decimal("1") + majoration)
-    
-            # Avenant
-            montant += self.avenant
-    
-            return montant.quantize(
-                Decimal("0.01"),
-                rounding=ROUND_HALF_UP
-            )
-    def save(self, *args, **kwargs):
-                self.montant_global_ttc = self.calculer_ttc()
-                super().save(*args, **kwargs)
 
+    def calculer_ttc(self):
+        """
+        Montant TTC =
+        (Montant HT × (1 + TVA) × ((1 - Rabais) ou (1 + Majoration))) + Avenant
+        """
+
+        ht = self.montant_ht
+        tva = self.taux_tva / Decimal("100")
+        rabais = self.taux_rabais / Decimal("100")
+        majoration = self.taux_majoration / Decimal("100")
+
+        # TVA
+        montant = ht * (Decimal("1") + tva)
+
+        # Rabais ou majoration
+        if rabais > 0:
+            montant *= Decimal("1") - rabais
+        elif majoration > 0:
+            montant *= Decimal("1") + majoration
+
+        # Avenant
+        montant += self.avenant
+
+        return montant.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+    def save(self, *args, **kwargs):
+        self.montant_global_ttc = self.calculer_ttc()
+        super().save(*args, **kwargs)
 
     caution_provisoire = models.DecimalField(
-        max_digits=14, decimal_places=2, null=True, blank=True, verbose_name="Caution provisoire"
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Caution provisoire",
     )
     caution_definitive = models.DecimalField(
-        max_digits=14, decimal_places=2, null=True, blank=True, verbose_name="Caution définitive"
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Caution définitive",
     )
     retenue_garantie = models.DecimalField(
-        max_digits=14, decimal_places=2, null=True, blank=True, default=0, verbose_name="Retenue de garantie"
+        max_digits=14,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        default=0,
+        verbose_name="Retenue de garantie",
     )
     marche_solde = models.BooleanField(default=False, verbose_name="Marché soldé")
     marche_resilie = models.BooleanField(default=False, verbose_name="Marché résilié")
-    info_supp = models.TextField(blank=True, verbose_name="Informations supplémentaires")
+    info_supp = models.TextField(
+        blank=True, verbose_name="Informations supplémentaires"
+    )
 
     class Meta:
         verbose_name = "Fiche marché"
@@ -231,6 +271,7 @@ class FicheMarche(HorodatageMixin):
         """
         return self.nantissements.exists()
 
+
 class Nantissement(DocumentLieAuMarche):
     """
     Feuille Excel NANTISSEMENT -- nantissement (gage bancaire) adossé à un marché.
@@ -243,7 +284,9 @@ class Nantissement(DocumentLieAuMarche):
     avec label_from_instance dédié) plutôt que le modèle : la FK le permet déjà.
     """
 
-    num_acte = models.CharField(max_length=50, verbose_name="Numéro de l'acte de nantissement")
+    num_acte = models.CharField(
+        max_length=50, verbose_name="Numéro de l'acte de nantissement"
+    )
     date_nant = models.DateField(verbose_name="Date de nantissement")
     mtt_nant = models.DecimalField(
         max_digits=14,
@@ -265,7 +308,9 @@ class Nantissement(DocumentLieAuMarche):
     # nantissement, pouvant évoluer indépendamment de celles du marché par la suite)
     # ou s'il serait préférable de les supprimer et de ne référencer que
     # self.marche.rib / self.marche.dom_bancaire.
-    rib = models.CharField(max_length=24, validators=[rib_validator], verbose_name="RIB")
+    rib = models.CharField(
+        max_length=24, validators=[rib_validator], verbose_name="RIB"
+    )
     dom_banc = models.CharField(max_length=255, verbose_name="Domiciliation bancaire")
 
     class Meta:
@@ -275,6 +320,7 @@ class Nantissement(DocumentLieAuMarche):
 
     def __str__(self):
         return f"Nantissement {self.num_acte} - Marché {self.marche.num_marche}"
+
 
 class Penalite(DocumentLieAuMarche):
     """
@@ -302,4 +348,3 @@ class Penalite(DocumentLieAuMarche):
 
     def __str__(self):
         return f"Pénalité {self.num_penalite} - Marché {self.marche.num_marche}"
-

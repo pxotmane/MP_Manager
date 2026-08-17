@@ -7,36 +7,139 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='Tresorerie',
+            name="Tresorerie",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('op', models.PositiveIntegerField(verbose_name="Numéro d'OP")),
-                ('ov', models.CharField(blank=True, help_text="Renseigné l'ordre de virement.", max_length=30, null=True, verbose_name="Numéro d'OV")),
-                ('exercice', models.PositiveSmallIntegerField(verbose_name="Exercice d'origine")),
-                ('budget', models.CharField(choices=[('RAM EXP', 'RAM Exploitation'), ('RAM INV', 'RAM Investissement'), ('BUDGET EXP', 'Budget Exploitation'), ('BUDGET INV', 'Budget Investissement')], max_length=10, verbose_name='RAM ou Budget')),
-                ('ligne_budgetaire', models.CharField(help_text='Exemple : 980.912.32.31', max_length=50, verbose_name='Ligne budgétaire')),
-                ('code', models.PositiveIntegerField(help_text="Code du plan comptable CGNC. À vérifier : envisager une ForeignKey vers votre modèle de plan comptable (app accounting) plutôt qu'un entier brut, pour garantir la cohérence avec votre plan comptable.", verbose_name='Code CGNC')),
-                ('nature', models.CharField(choices=[('MARCHE', 'Marché'), ('HEURES_SUPP', 'Heures supplémentaires'), ('BON COMMANDE', 'Bon de commande'), ('CONVENTION', 'Convention'), ('FRAIS AUTORISATION', 'Frais autorisations'), ('INSERSTION', 'Insertion')], max_length=20, verbose_name='Nature')),
-                ('beneficiaires', models.CharField(max_length=255, verbose_name='Bénéficiaires')),
-                ('montant', models.DecimalField(decimal_places=2, max_digits=14, verbose_name='Montant de décompte')),
-                ('date_rejet', models.DateField(blank=True, null=True, verbose_name='Date de rejet')),
-                ('num_rejet', models.PositiveIntegerField(blank=True, null=True, verbose_name='Numéro de rejet')),
-                ('date_visa', models.DateField(blank=True, null=True, verbose_name='Date de visa')),
-                ('date_decaissement', models.DateField(blank=True, help_text='Décaissement sur compte TGR.', null=True, verbose_name='Date de décaissement')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("op", models.PositiveIntegerField(verbose_name="Numéro d'OP")),
+                (
+                    "ov",
+                    models.CharField(
+                        blank=True,
+                        help_text="Renseigné l'ordre de virement.",
+                        max_length=30,
+                        null=True,
+                        verbose_name="Numéro d'OV",
+                    ),
+                ),
+                (
+                    "exercice",
+                    models.PositiveSmallIntegerField(verbose_name="Exercice d'origine"),
+                ),
+                (
+                    "budget",
+                    models.CharField(
+                        choices=[
+                            ("RAM EXP", "RAM Exploitation"),
+                            ("RAM INV", "RAM Investissement"),
+                            ("BUDGET EXP", "Budget Exploitation"),
+                            ("BUDGET INV", "Budget Investissement"),
+                        ],
+                        max_length=10,
+                        verbose_name="RAM ou Budget",
+                    ),
+                ),
+                (
+                    "ligne_budgetaire",
+                    models.CharField(
+                        help_text="Exemple : 980.912.32.31",
+                        max_length=50,
+                        verbose_name="Ligne budgétaire",
+                    ),
+                ),
+                (
+                    "code",
+                    models.PositiveIntegerField(
+                        help_text="Code du plan comptable CGNC. À vérifier : envisager une ForeignKey vers votre modèle de plan comptable (app accounting) plutôt qu'un entier brut, pour garantir la cohérence avec votre plan comptable.",
+                        verbose_name="Code CGNC",
+                    ),
+                ),
+                (
+                    "nature",
+                    models.CharField(
+                        choices=[
+                            ("MARCHE", "Marché"),
+                            ("HEURES_SUPP", "Heures supplémentaires"),
+                            ("BON COMMANDE", "Bon de commande"),
+                            ("CONVENTION", "Convention"),
+                            ("FRAIS AUTORISATION", "Frais autorisations"),
+                            ("INSERSTION", "Insertion"),
+                        ],
+                        max_length=20,
+                        verbose_name="Nature",
+                    ),
+                ),
+                (
+                    "beneficiaires",
+                    models.CharField(max_length=255, verbose_name="Bénéficiaires"),
+                ),
+                (
+                    "montant",
+                    models.DecimalField(
+                        decimal_places=2,
+                        max_digits=14,
+                        verbose_name="Montant de décompte",
+                    ),
+                ),
+                (
+                    "date_rejet",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Date de rejet"
+                    ),
+                ),
+                (
+                    "num_rejet",
+                    models.PositiveIntegerField(
+                        blank=True, null=True, verbose_name="Numéro de rejet"
+                    ),
+                ),
+                (
+                    "date_visa",
+                    models.DateField(
+                        blank=True, null=True, verbose_name="Date de visa"
+                    ),
+                ),
+                (
+                    "date_decaissement",
+                    models.DateField(
+                        blank=True,
+                        help_text="Décaissement sur compte TGR.",
+                        null=True,
+                        verbose_name="Date de décaissement",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Trésorerie (OP)',
-                'verbose_name_plural': 'Trésorerie (OP)',
-                'ordering': ['-exercice', '-op'],
-                'indexes': [models.Index(fields=['exercice', 'op'], name='tresorerie__exercic_9b2613_idx'), models.Index(fields=['ligne_budgetaire'], name='tresorerie__ligne_b_821f55_idx')],
-                'constraints': [models.UniqueConstraint(fields=('op', 'exercice'), name='unique_op_exercice')],
+                "verbose_name": "Trésorerie (OP)",
+                "verbose_name_plural": "Trésorerie (OP)",
+                "ordering": ["-exercice", "-op"],
+                "indexes": [
+                    models.Index(
+                        fields=["exercice", "op"], name="tresorerie__exercic_9b2613_idx"
+                    ),
+                    models.Index(
+                        fields=["ligne_budgetaire"],
+                        name="tresorerie__ligne_b_821f55_idx",
+                    ),
+                ],
+                "constraints": [
+                    models.UniqueConstraint(
+                        fields=("op", "exercice"), name="unique_op_exercice"
+                    )
+                ],
             },
         ),
     ]

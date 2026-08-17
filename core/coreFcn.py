@@ -1,7 +1,7 @@
-
 from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.db.models import Exists, F, OuterRef
+
 
 class HorodatageMixin(models.Model):
     """Ajoute les champs de traçabilité created_at / updated_at."""
@@ -24,12 +24,11 @@ class DocumentLieAuMarche(HorodatageMixin):
     """
 
     marche = models.ForeignKey(
-        "FicheMarche", on_delete=models.PROTECT, related_name="%(class)ss", verbose_name="Marché"
+        "FicheMarche",
+        on_delete=models.PROTECT,
+        related_name="%(class)ss",
+        verbose_name="Marché",
     )
 
     class Meta:
         abstract = True
-
-
-
-

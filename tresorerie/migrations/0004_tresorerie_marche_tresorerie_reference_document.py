@@ -7,19 +7,30 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('marche', '0001_initial'),
-        ('tresorerie', '0003_alter_tresorerie_nature'),
+        ("marche", "0001_initial"),
+        ("tresorerie", "0003_alter_tresorerie_nature"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='tresorerie',
-            name='marche',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='marche.fichemarche', verbose_name='Numéro de marché'),
+            model_name="tresorerie",
+            name="marche",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to="marche.fichemarche",
+                verbose_name="Numéro de marché",
+            ),
         ),
         migrations.AddField(
-            model_name='tresorerie',
-            name='reference_document',
-            field=models.CharField(blank=True, max_length=100, null=True, verbose_name='Référence du document (BC, Convention...)'),
+            model_name="tresorerie",
+            name="reference_document",
+            field=models.CharField(
+                blank=True,
+                max_length=100,
+                null=True,
+                verbose_name="Référence du document (BC, Convention...)",
+            ),
         ),
     ]

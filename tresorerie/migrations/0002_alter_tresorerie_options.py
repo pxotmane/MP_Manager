@@ -6,12 +6,16 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('tresorerie', '0001_initial'),
+        ("tresorerie", "0001_initial"),
     ]
 
     operations = [
         migrations.AlterModelOptions(
-            name='tresorerie',
-            options={'ordering': ['-exercice', '-op'], 'verbose_name': 'Trésorerie', 'verbose_name_plural': 'Trésorerie'},
+            name="tresorerie",
+            options={
+                "ordering": ["-exercice", "-op"],
+                "verbose_name": "Trésorerie",
+                "verbose_name_plural": "Trésorerie",
+            },
         ),
     ]
