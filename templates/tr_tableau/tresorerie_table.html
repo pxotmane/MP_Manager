@@ -2,11 +2,25 @@
 {% load static %}
 {% block title %}Trésorerie{% endblock %}
 
+<!-- Ajout des CSS de DataTables pour la mise en forme -->
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
 {% block content %}
-    <h1>Trésorerie</h1>
-    <table class="table">
-        <thead>
-            <tr>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1>Suivi de Trésorerie</h1>
+        <!-- Option d'ajout d'une nouvelle ligne -->
+        <a href="{% url 'tresorerie_add' %}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Ajouter une OP
+        </a>
+    </div>
+
+    <!-- Ajout d'un ID "tresorerieTable" pour le cibler avec JavaScript -->
+    <table id="tresorerieTable" class="table table-striped table-bordered">
+        <thead class="table-dark">
+            <tr id="filterRow">
                 <th>OP</th>
                 <th>OV</th>
                 <th>Exercice</th>
@@ -20,13 +34,29 @@
                 <th>Numéro de rejet</th>
                 <th>Date de visa</th>
                 <th>Date de décaissement</th>
+                <th>Actions</th> <!-- Nouvelle colonne pour les actions -->
             </tr>
+            <!-- Ligne de filtres par colonne -->
+            <!--- <tr id="filterRow">
+                <th>OP</th>
+                <th>OV</th>
+                <th>Exercice</th>
+                <th>Budget</th>
+                <th>Ligne budgétaire</th>
+                <th>Code</th>
+                <th>Nature</th>
+                <th>Bénéficiaires</th>
+                <th>Montant</th>
+                <th></th> 
+            </tr> --->
+
+            <!-- Pas de filtre pour les actions -->
         </thead>
         <tbody>
             {% for tresorerie in tresorerie_list %}
             <tr>
                 <td>{{ tresorerie.op }}</td>
-                <td>{{ tresorerie.ov }}</td>
+                <td>{{ tresorerie.ov|default_if_none:"-" }}</td>
                 <td>{{ tresorerie.exercice }}</td>
                 <td>{{ tresorerie.budget }}</td>
                 <td>{{ tresorerie.ligne_budgetaire }}</td>
@@ -38,8 +68,53 @@
                 <td>{{ tresorerie.num_rejet }}</td>
                 <td>{{ tresorerie.date_visa }}</td>
                 <td>{{ tresorerie.date_decaissement }}</td>
+                <!-- Options de modification et suppression -->
+                <td>
+                    <a href="{% url 'tresorerie_edit' tresorerie.pk %}" class="btn btn-sm btn-primary">Modifier</a>
+                    <a href="{% url 'tresorerie_delete' tresorerie.pk %}" class="btn btn-sm btn-danger">Supprimer</a>
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Scripts jQuery et DataTables -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+
+<script>
+$(document).ready(function() {
+    // Initialisation des champs de recherche par colonne
+    $('#tresorerieTable thead #filterRow th').each(function(i) {
+        var title = $(this).text();
+        if (title !== "") {
+            $(this).html('<input type="text" class="form-control form-control-sm" placeholder="' + title + '" />');
+        }
+    });
+
+    // Initialisation de DataTables (gère la recherche globale automatiquement)
+    var table = $('#tresorerieTable').DataTable({
+        "language": {
+            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json" // Traduction en français
+        },
+        "orderCellsTop": true,
+        "pageLength": 25
+    });
+
+    // Application du filtre par colonne
+    $('#tresorerieTable thead').on('keyup change', '#filterRow input', function() {
+        var index = $(this).parent().index();
+        if (table.column(index).search() !== this.value) {
+            table
+                .column(index)
+                .search(this.value)
+                .draw();
+        }
+    });
+});
+</script>
 {% endblock %}

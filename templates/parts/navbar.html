@@ -1,7 +1,6 @@
 
 {% load static %}
 
-{% load static %}
 <div class="container-fluid">
 <nav class="navbar navbar-expand-lg navbar-light" style="margin-bottom: 20px; height: 80px; background-color: #ffffff; border-bottom: 1px solid #e0e0e0; padding: 0;">
   <div class="container-fluid">
@@ -15,7 +14,7 @@
     </button>
     
     <div class="collapse navbar-collapse" id="navbarNavDropdown">
-      
+      <!-- main navigation bar -->
       <ul class="navbar-nav me-auto">  
         {% if user.is_authenticated %}
         <li class="nav-item">
@@ -39,9 +38,9 @@
         </li>
         {% endif %}
       </ul>
-
+      <!-- user info and logout button -->
       {% if user.is_authenticated %}
-      <div class="d-flex align-items-center ms-auto gap-3 pe-3">
+      <div class="d-flex align-items-center ms-auto gap-3 pe-3"> <!-- Add a gap between the user info and the logout button -->
           <span class="navbar-text text-dark fw-bold mb-0">
               Bonjour, {{ user.first_name|title }} {{ user.last_name|upper }}
           </span>

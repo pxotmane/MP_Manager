@@ -32,7 +32,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    # 'login.apps.LoginConfig', #Add the Login app to the list of installed apps
+    # 'login.apps.LoginConfig', #Add the Login app to the list of installed apps: bad way for the login app, because it will cause a circular import error
     "django_bootstrap5",  # Add the django-bootstrap5 app to the list of installed apps
     "pages.apps.PagesConfig",  # Add the Pages app to the list of installed apps
     "tresorerie.apps.TresorerieConfig",  # Add the Tresorerie app to the list of installed apps
@@ -53,7 +53,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "MP_Manager.middleware.LoginRequiredMiddleware",
+    "core.middleware.LoginRequiredMiddleware",  # this is for the authentication middleware, to redirect the user to the login page if he is not authenticated
 ]
 
 ROOT_URLCONF = "MP_Manager.urls"
@@ -111,7 +111,7 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "fr"
 
 TIME_ZONE = "UTC"
 
@@ -131,3 +131,4 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, "MP_Manager/static")]
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "login"
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"

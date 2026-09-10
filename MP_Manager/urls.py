@@ -27,10 +27,33 @@ urlpatterns = [
         auth_views.LoginView.as_view(template_name="registration/login.html"),
         name="login",
     ),
+    # logout: redirect to the login page after logout
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
+    # Password reset views
+    path(
+        "password_reset/", auth_views.PasswordResetView.as_view(), name="password_reset"
+    ),
+    # Password reset done view
+    path(
+        "password_reset/done/",
+        auth_views.PasswordResetDoneView.as_view(),
+        name="password_reset_done",
+    ),
+    # Password reset confirm view
+    path(
+        "reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(),
+        name="password_reset_confirm",
+    ),
+    # Password reset complete view
+    path(
+        "reset/done/",
+        auth_views.PasswordResetCompleteView.as_view(),
+        name="password_reset_complete",
+    ),
     path("", include("pages.urls")),  # Include the URLs from the 'pages' app
     path(
-        "tresorerie/", include("tresorerie.urls")
+        "TR/", include("tresorerie.urls")
     ),  # Include the URLs from the 'tresorerie' app
     path("marche/", include("marche.urls")),  # Include the URLs from the 'marche' app
     # path('', include('login.urls')), # Include the URLs from the 'login' app
