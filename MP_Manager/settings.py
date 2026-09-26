@@ -10,23 +10,34 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
-from pathlib import Path
 import os
+from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# [AUDIT PHASE 1] Chargement des variables d'environnement depuis le fichier .env
+env_file = BASE_DIR / '.env'
+if env_file.exists():
+    with open(env_file) as f:
+        for line in f:
+            if line.strip() and not line.startswith('#'):
+                key, value = line.strip().split('=', 1)
+                os.environ.setdefault(key, value.strip())
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-_klksqsmvrwemwof4@4(f$nz-oitd#l=&14u0t4&cxm^3$ehtt"
+# [AUDIT PHASE 1] La clé secrète est désormais lue depuis le fichier .env pour ne pas l'exposer dans le code
+SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-_klksqsmvrwemwof4@4(f$nz-oitd#l=&14u0t4&cxm^3$ehtt")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+# [AUDIT PHASE 1] Le mode DEBUG dépend du .env (ce qui évite de le laisser à True en production par erreur)
+DEBUG = os.environ.get("DEBUG", "False").lower() in ("true", "1", "t")
 
-ALLOWED_HOSTS = []
+# [AUDIT PHASE 1] ALLOWED_HOSTS est lu depuis le .env pour accepter uniquement vos domaines légitimes
+ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split(",") if os.environ.get("ALLOWED_HOSTS") else []
 
 
 # Application definition
@@ -81,10 +92,11 @@ WSGI_APPLICATION = "MP_Manager.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
+# [AUDIT PHASE 1] Configuration de la base de données paramétrable via .env (prépare la migration vers PostgreSQL)
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": os.environ.get("DB_ENGINE", "django.db.backends.sqlite3"),
+        "NAME": BASE_DIR / os.environ.get("DB_NAME", "db.sqlite3"),
     }
 }
 
@@ -132,3 +144,13 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "login"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+# [AUDIT PHASE 1] Paramètres de sécurité HTTPS / Cookies.
+# On les conditionne à "not DEBUG" pour ne surtout pas casser le développement local en HTTP.
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 an
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

@@ -1,0 +1,27 @@
+# [AUDIT PHASE 1] Exclusion des fichiers sensibles et générés (Recommandation de sécurité)
+
+# Base de données locale (ne jamais commiter pour des raisons de sécurité et de conflits)
+db.sqlite3
+db.sqlite3-journal
+
+# Variables d'environnement (contiennent des secrets comme SECRET_KEY, mots de passe DB)
+.env
+.env.*
+
+# Fichiers compilés et générés par Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Fichiers médias (fichiers uploadés par les utilisateurs, ne font pas partie du code source)
+media/
+
+# Environnements virtuels
+venv/
+env/
+.venv/
+ENV/
+
+# Fichiers de log et divers
+*.log
+.DS_Store
