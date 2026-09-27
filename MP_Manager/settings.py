@@ -144,6 +144,13 @@ LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "login"
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# 1. Définir le temps d'expiration de la session en secondes (ex: 900 secondes = 15 minutes)
+SESSION_COOKIE_AGE = 900 
+# 2. Réinitialiser ce chronomètre de 15 minutes à chaque fois que l'utilisateur 
+# charge une nouvelle page ou fait une action sur le site.
+SESSION_SAVE_EVERY_REQUEST = True
+
 
 # [AUDIT PHASE 1] Paramètres de sécurité HTTPS / Cookies.
 # On les conditionne à "not DEBUG" pour ne surtout pas casser le développement local en HTTP.

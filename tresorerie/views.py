@@ -16,20 +16,21 @@ class TresorerieCreateView(CreateView):
     model = Tresorerie
     template_name = "tresorerie_form.html"
     fields = "__all__"
-    success_url = reverse_lazy("tresorerie_list")
+    # Le nom d'URL de la liste est "tresorerie_table" (et non "tresorerie_list")
+    success_url = reverse_lazy("tresorerie_table")
 
 
 class TresorerieUpdateView(UpdateView):
     model = Tresorerie
     template_name = "tresorerie_form.html"
     fields = "__all__"
-    success_url = reverse_lazy("tresorerie_list")
+    success_url = reverse_lazy("tresorerie_table")
 
 
 class TresorerieDeleteView(DeleteView):
     model = Tresorerie
     template_name = "tresorerie_confirm_delete.html"
-    success_url = reverse_lazy("tresorerie_list")
+    success_url = reverse_lazy("tresorerie_table")
 
 
 # from django.shortcuts import render

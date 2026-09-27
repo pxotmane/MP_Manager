@@ -1,120 +1,135 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Trésorerie{% endblock %}
+{% load ui_extras %}
 
-<!-- Ajout des CSS de DataTables pour la mise en forme -->
+{% block title %}Suivi de trésorerie — MP Manager{% endblock %}
+
 {% block extra_css %}
+<!-- CSS DataTables pour Bootstrap 5 -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
 {% endblock %}
 
 {% block content %}
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1>Suivi de Trésorerie</h1>
-        <!-- Option d'ajout d'une nouvelle ligne -->
-        <a href="{% url 'tresorerie_add' %}" class="btn btn-success">
-            <i class="fas fa-plus"></i> Ajouter une OP
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-0 text-mp-blue">Suivi de Trésorerie</h1>
+            <p class="text-muted-soft small mb-0">Ordres de paiement, visas et décaissements</p>
+        </div>
+        <!-- Ajout d'un nouvel ordre de paiement -->
+        <a href="{% url 'tresorerie_add' %}" class="btn btn-matte-primary">
+            <i class="bi bi-plus-lg me-1"></i>Ajouter une OP
         </a>
     </div>
 
-    <!-- Ajout d'un ID "tresorerieTable" pour le cibler avec JavaScript -->
-    <table id="tresorerieTable" class="table table-striped table-bordered">
-        <thead class="table-dark">
-            <tr id="filterRow">
-                <th>OP</th>
-                <th>OV</th>
-                <th>Exercice</th>
-                <th>Budget</th>
-                <th>Ligne budgétaire</th>
-                <th>Code</th>
-                <th>Nature</th>
-                <th>Bénéficiaires</th>
-                <th>Montant</th>
-                <th>Date de rejet</th>
-                <th>Numéro de rejet</th>
-                <th>Date de visa</th>
-                <th>Date de décaissement</th>
-                <th>Actions</th> <!-- Nouvelle colonne pour les actions -->
-            </tr>
-            <!-- Ligne de filtres par colonne -->
-            <tr id="filterRow">
-                <th>OP</th>
-                <th>OV</th>
-                <th>Exercice</th>
-                <th>Budget</th>
-                <th>Ligne budgétaire</th>
-                <th>Code</th>
-                <th>Nature</th>
-                <th>Bénéficiaires</th>
-                <th>Montant</th>
-                <th></th> 
-            </tr>
-
-            <!-- Pas de filtre pour les actions -->
-        </thead>
-        <tbody>
-            {% for tresorerie in tresorerie_list %}
-            <tr>
-                <td>{{ tresorerie.op }}</td>
-                <td>{{ tresorerie.ov|default_if_none:"-" }}</td>
-                <td>{{ tresorerie.exercice }}</td>
-                <td>{{ tresorerie.budget }}</td>
-                <td>{{ tresorerie.ligne_budgetaire }}</td>
-                <td>{{ tresorerie.code }}</td>
-                <td>{{ tresorerie.nature }}</td>
-                <td>{{ tresorerie.beneficiaires }}</td>
-                <td>{{ tresorerie.montant }}</td>
-                <td>{{ tresorerie.date_rejet }}</td>
-                <td>{{ tresorerie.num_rejet }}</td>
-                <td>{{ tresorerie.date_visa }}</td>
-                <td>{{ tresorerie.date_decaissement }}</td>
-                <!-- Options de modification et suppression -->
-                <td>
-                    <a href="{% url 'tresorerie_edit' tresorerie.pk %}" class="btn btn-sm btn-primary">Modifier</a>
-                    <a href="{% url 'tresorerie_delete' tresorerie.pk %}" class="btn btn-sm btn-danger">Supprimer</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="table-card">
+        <!-- Conteneur de défilement : le tableau, s'il est plus large que la carte,
+             défile horizontalement À L'INTÉRIEUR de celle-ci. -->
+        <div class="table-responsive">
+            <table id="tresorerieTable" class="table table-striped table-hover">
+                <thead>
+                    <!-- Ligne 1 : titres (utilisés par le tri DataTables) -->
+                    <tr>
+                        <th>OP</th>
+                        <th>OV</th>
+                        <th>Exercice</th>
+                        <th>Budget</th>
+                        <th>Ligne budgétaire</th>
+                        <th>Code</th>
+                        <th>Nature</th>
+                        <th>Bénéficiaires</th>
+                        <th>Montant</th>
+                        <th>Date de rejet</th>
+                        <th>N° de rejet</th>
+                        <th>Date de visa</th>
+                        <th>Date de décaissement</th>
+                        <th class="actions-col text-center">Actions</th>
+                    </tr>
+                    <!-- Ligne 2 : filtres par colonne (tr.filters, isolée du reste du JS) -->
+                    <tr class="filters">
+                        <th data-placeholder="OP"></th>
+                        <th data-placeholder="OV"></th>
+                        <th data-placeholder="Exercice"></th>
+                        <th data-placeholder="Budget"></th>
+                        <th data-placeholder="Ligne budgétaire"></th>
+                        <th data-placeholder="Code"></th>
+                        <th data-placeholder="Nature"></th>
+                        <th data-placeholder="Bénéficiaires"></th>
+                        <th data-placeholder="Montant"></th>
+                        <th data-filter="off"></th>
+                        <th data-filter="off"></th>
+                        <th data-filter="off"></th>
+                        <th data-filter="off"></th>
+                        <th class="actions-col" data-filter="off"></th><!-- Actions : jamais filtrée -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tresorerie in tresorerie_list %}
+                    <tr>
+                        <td class="fw-semibold">{{ tresorerie.op }}</td>
+                        <td>{{ tresorerie.ov|default_if_none:"-" }}</td>
+                        <td>{{ tresorerie.exercice }}</td>
+                        <!-- Pill Budget : couleur = type (EXP/INV), remplissage = source (RAM/BUDGET).
+                             Aucune icône (registre administratif) : la pastille est ajoutée en CSS. -->
+                        <td>
+                            <span class="badge-matte {{ tresorerie.budget|budget_badge }}"
+                                  title="{{ tresorerie.get_budget_display }}">{{ tresorerie.get_budget_display|default:"Non renseigné" }}</span>
+                        </td>
+                        <td>{{ tresorerie.ligne_budgetaire|default:"-" }}</td>
+                        <td>{{ tresorerie.code|default:"-" }}</td>
+                        <!-- Pill Nature -->
+                        <td>
+                            <span class="badge-matte {{ tresorerie.nature|nature_badge }}"
+                                  title="{{ tresorerie.get_nature_display }}">{{ tresorerie.get_nature_display|default:"Non renseignée" }}</span>
+                        </td>
+                        <td class="text-truncate" style="max-width: 260px;" title="{{ tresorerie.beneficiaires }}">{{ tresorerie.beneficiaires }}</td>
+                        <td class="text-end fw-semibold">{{ tresorerie.montant|floatformat:2 }}</td>
+                        <td>{{ tresorerie.date_rejet|date:"d/m/Y"|default:"-" }}</td>
+                        <td>{{ tresorerie.num_rejet|default:"-" }}</td>
+                        <td>{{ tresorerie.date_visa|date:"d/m/Y"|default:"-" }}</td>
+                        <td>{{ tresorerie.date_decaissement|date:"d/m/Y"|default:"-" }}</td>
+                        <!-- Colonne Actions : isolée du script DataTables (ni tri, ni recherche, ni filtre)
+                             et figée à droite pendant le défilement horizontal (CSS). -->
+                        <td class="text-center text-nowrap actions-col">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'tresorerie_edit' tresorerie.pk %}"
+                                   class="btn btn-soft-primary btn-icon rounded-3"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" title="Modifier"
+                                   aria-label="Modifier l'OP {{ tresorerie.op }}">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                                <form method="post" action="{% url 'tresorerie_delete' tresorerie.pk %}"
+                                      class="js-delete-form d-inline-flex"
+                                      data-label="OP {{ tresorerie.op }}/{{ tresorerie.exercice }} — {{ tresorerie.beneficiaires }}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-soft-danger btn-icon rounded-3"
+                                            data-bs-toggle="tooltip" data-bs-placement="top" title="Supprimer"
+                                            aria-label="Supprimer l'OP {{ tresorerie.op }}">
+                                        <i class="bi bi-trash3"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="14" class="text-center text-muted-soft py-4">
+                            <i class="bi bi-inbox me-1"></i>Aucun ordre de paiement enregistré.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 {% endblock %}
 
 {% block extra_js %}
-<!-- Scripts jQuery et DataTables -->
+<!-- Scripts jQuery et DataTables (Bootstrap 5) -->
 <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
-
-<script>
-$(document).ready(function() {
-    // Initialisation des champs de recherche par colonne
-    $('#tresorerieTable thead #filterRow th').each(function(i) {
-        var title = $(this).text();
-        if (title !== "") {
-            $(this).html('<input type="text" class="form-control form-control-sm" placeholder="' + title + '" />');
-        }
-    });
-
-    // Initialisation de DataTables (gère la recherche globale automatiquement)
-    var table = $('#tresorerieTable').DataTable({
-        "language": {
-            "url": "//cdn.datatables.net/plug-ins/1.13.6/i18n/fr-FR.json" // Traduction en français
-        },
-        "orderCellsTop": true,
-        "pageLength": 25
-    });
-
-    // Application du filtre par colonne
-    $('#tresorerieTable thead').on('keyup change', '#filterRow input', function() {
-        var index = $(this).parent().index();
-        if (table.column(index).search() !== this.value) {
-            table
-                .column(index)
-                .search(this.value)
-                .draw();
-        }
-    });
-});
-</script>
+<!-- Script du tableau : filtres par colonne + colonne Actions isolée -->
+<script src="{% static 'JS/tresorerie-table.js' %}"></script>
 {% endblock %}

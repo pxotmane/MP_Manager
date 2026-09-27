@@ -1,7 +1,38 @@
-body {
-    font-family: Arial, sans-serif;
-    background-color: #ffffff;
+/* ==========================================================================
+   MP Manager -- Feuille de style globale
+   Palette << matte >> : bleu profond (--mp-blue) + vert sobre (--mp-green)
+   ========================================================================== */
+
+/* 1. Palette & bases ------------------------------------------------------ */
+:root {
+    --mp-blue: #17405E;
+    --mp-blue-600: #1E5A82;
+    --mp-blue-dark: #123449;
+    --mp-green: #2E6B4F;
+    --mp-green-600: #3B7D5C;
+    --mp-green-dark: #24543E;
+    --mp-teal: #2A6F73;
+    --mp-slate: #4A5568;
+    --mp-bg: #F5F7FA;
+    --mp-border: #E3E8EF;
+    --mp-text: #1F2933;
+    --mp-muted: #6B7A8F;
 }
+
+body {
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background-color: var(--mp-bg);
+    color: var(--mp-text);
+}
+
+h1, h2, h3, h4, h5 { letter-spacing: -0.01em; }
+
+.text-mp-blue { color: var(--mp-blue) !important; }
+.text-mp-green { color: var(--mp-green) !important; }
+.text-muted-soft { color: var(--mp-muted) !important; }
+
+.navbar .nav-link.active { color: var(--mp-blue); font-weight: 600; }
+.navbar .nav-link:hover { color: var(--mp-blue-600); }
 
 header {
     background-color: #f8f8f8;
@@ -32,36 +63,51 @@ nav ul li a {
     text-decoration: none;
 }
 
-footer {
-    background-color: #f8f8f8;
-    bottom: 0;
-    padding: 5px;
-    position: fixed;
-    text-align: center;
-    width: 100%;
+/* 3. Footer "sticky" (flux flex) : ne recouvre plus la pagination ---------- */
+/* L'ancien reglage "position: fixed" est supprime : il masquait la barre
+   de pagination de DataTables situee en bas du tableau.                     */
+.app-footer {
+    flex-shrink: 0;
+    background-color: #ffffff;
+    border-top: 1px solid var(--mp-border);
+    color: var(--mp-muted);
+}
+
+/* 4. Tableaux ------------------------------------------------------------ */
+.table-card {
+    background-color: #ffffff;
+    border: 1px solid var(--mp-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
+    padding: 1rem;
+    margin-bottom: 1rem;
+    /* Le defilement horizontal du tableau reste a l'interieur des coins arrondis */
+    overflow: hidden;
 }
 
 .table {
     width: 100%;
     border-collapse: collapse;
-    margin: 20px 0;
+    margin-bottom: 0.75rem;
     background-color: #ffffff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    overflow: hidden;
 }
 
 .table th,
 .table td {
-    border: 1px solid #d0d7de;
     padding: 10px 12px;
     text-align: left;
+    border-color: var(--mp-border);
 }
 
 .table thead th {
-    background-color: #0b5ed7;
+    background-color: var(--mp-blue);
     color: #ffffff;
-    font-weight: bold;
+    font-weight: 600;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border-color: #16374f;
+    white-space: nowrap;
 }
 
 .table tbody tr:nth-child(even) {
@@ -69,8 +115,214 @@ footer {
 }
 
 .table tbody tr:hover {
-    background-color: #eaf3ff;
+    background-color: #eef5fb;
 }
+
+/* Colonne Actions : largeur contenue */
+.actions-col { width: 96px; }
+
+/* 5. DataTables (tableau Tresorerie) ------------------------------------- */
+/* Le tableau ne descend jamais sous 100 % de la carte ; au-dela il defile
+   dans le conteneur .table-responsive.                                      */
+#tresorerieTable { min-width: 100%; }
+
+#tresorerieTable thead tr:first-child th {
+    background-image: linear-gradient(180deg, var(--mp-blue) 0%, var(--mp-blue-600) 100%);
+}
+
+#tresorerieTable thead tr.filters th {
+    background-color: var(--mp-bg);
+    background-image: none;
+    text-transform: none;
+    letter-spacing: normal;
+    border-bottom: 1px solid var(--mp-border);
+    padding: 6px 8px;
+}
+
+#tresorerieTable thead tr.filters input {
+    font-size: 0.78rem;
+    min-width: 70px;
+}
+
+#tresorerieTable td { vertical-align: middle; }
+
+/* Zebrage et survol : on neutralise le liseré interne de DataTables
+   (box-shadow) au profit du CSS maison, pour que la colonne Actions figée
+   ait EXACTEMENT la meme teinte que le reste de sa ligne. */
+#tresorerieTable.table-striped > tbody > tr.odd > *:not(.actions-col),
+#tresorerieTable.table-hover > tbody > tr:hover > *:not(.actions-col) {
+    box-shadow: none;
+}
+
+/* Colonne Actions figée a droite pendant le defilement horizontal -------- */
+#tresorerieTable thead tr th.actions-col {
+    position: sticky;
+    right: 0;
+    z-index: 4;
+}
+
+#tresorerieTable tbody td.actions-col {
+    position: sticky;
+    right: 0;
+    z-index: 2;
+    background-color: #ffffff;
+    box-shadow: -6px 0 8px -6px rgba(16, 24, 40, 0.15);
+}
+
+#tresorerieTable.table-striped > tbody > tr:nth-child(even) > td.actions-col {
+    background-color: #f8f9fa;
+}
+
+#tresorerieTable.table-hover > tbody > tr:hover > td.actions-col {
+    background-color: #eef5fb;
+}
+
+/* Contrôles DataTables --------------------------------------------------- */
+.dataTables_wrapper { margin-bottom: 0.5rem; }
+
+/* Attention : ne PAS surcharger le padding du <select> (classe .form-select).
+   Bootstrap réserve l'espace de sa flèche via padding-right: 2.25rem ; le
+   réduire ferait passer la flèche par-dessus le texte. */
+.dataTables_wrapper .dataTables_length select {
+    border: 1px solid var(--mp-border);
+    border-radius: 0.5rem;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+    border: 1px solid var(--mp-border);
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.5rem;
+}
+
+.dataTables_wrapper .dataTables_info {
+    color: var(--mp-muted);
+    font-size: 0.85rem;
+}
+
+/* Pagination : couleur du texte explicitement blanche sur la page active
+   (sinon .dataTables_wrapper .page-link, de même spécificité que
+   .active > .page-link de Bootstrap mais chargée après, laisse un texte bleu
+   sur fond bleu). */
+.dataTables_wrapper .page-link { color: var(--mp-blue); }
+.dataTables_wrapper .page-link:hover { color: var(--mp-blue-dark); }
+.dataTables_wrapper .page-item.active .page-link {
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+    color: #ffffff;
+}
+.dataTables_wrapper .page-item.disabled .page-link {
+    color: var(--mp-muted);
+    background-color: #ffffff;
+    border-color: var(--mp-border);
+}
+
+/* 6. Boutons (teintes mates) --------------------------------------------- */
+.btn-matte-primary {
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+    color: #ffffff;
+}
+.btn-matte-primary:hover,
+.btn-matte-primary:focus {
+    background-color: var(--mp-blue-dark);
+    border-color: var(--mp-blue-dark);
+    color: #ffffff;
+}
+
+.btn-matte-success {
+    background-color: var(--mp-green);
+    border-color: var(--mp-green);
+    color: #ffffff;
+}
+.btn-matte-success:hover,
+.btn-matte-success:focus {
+    background-color: var(--mp-green-dark);
+    border-color: var(--mp-green-dark);
+    color: #ffffff;
+}
+
+.btn-matte-danger {
+    background-color: #8C2F2F;
+    border-color: #8C2F2F;
+    color: #ffffff;
+}
+.btn-matte-danger:hover,
+.btn-matte-danger:focus {
+    background-color: #6E2323;
+    border-color: #6E2323;
+    color: #ffffff;
+}
+
+.btn-soft-primary {
+    background-color: #E8EFF6;
+    color: var(--mp-blue);
+    border: 1px solid #CBDBE9;
+}
+.btn-soft-primary:hover,
+.btn-soft-primary:focus {
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+    color: #ffffff;
+}
+
+.btn-soft-danger {
+    background-color: #F7E9E9;
+    color: #8C2F2F;
+    border: 1px solid #EED2D2;
+}
+.btn-soft-danger:hover,
+.btn-soft-danger:focus {
+    background-color: #8C2F2F;
+    border-color: #8C2F2F;
+    color: #ffffff;
+}
+
+/* Bouton carre pour les actions (icones) */
+.btn-icon {
+    width: 34px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+/* 7. Pills Budget / Nature (couleurs mates, desaturees) ------------------ */
+.badge-matte {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.02em;
+    padding: 0.45em 0.75em;
+    border-radius: 50rem;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+/* Pastille de couleur discrete (remplace les icones dans les badges) */
+.badge-matte::before {
+    content: "";
+    flex: 0 0 auto;
+    width: 0.4rem;
+    height: 0.4rem;
+    margin-right: 0.4rem;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+.badge-matte-green { background-color: #E7F1EA; color: #2E6B4F; border-color: #C9E0D2; }
+.badge-matte-blue { background-color: #E8EFF6; color: #17405E; border-color: #CBDBE9; }
+.badge-matte-teal { background-color: #E6F1F1; color: #2A6F73; border-color: #C6E0E0; }
+.badge-matte-cyan { background-color: #E5F0F3; color: #22606E; border-color: #C7DFE5; }
+.badge-matte-indigo { background-color: #EAEBF7; color: #3E4A9C; border-color: #D3D6EE; }
+.badge-matte-amber { background-color: #FBF1E4; color: #8A5A1B; border-color: #F0DCC2; }
+.badge-matte-slate { background-color: #EEF1F5; color: #4A5568; border-color: #DCE2EA; }
+.badge-matte-green-solid { background-color: var(--mp-green); color: #ffffff; }
+.badge-matte-blue-solid { background-color: var(--mp-blue); color: #ffffff; }
+
+/* 8. Cartes (formulaires) ------------------------------------------------ */
+.card { border-color: var(--mp-border); }
+.card-header { background-color: #ffffff; }
 
   
 
