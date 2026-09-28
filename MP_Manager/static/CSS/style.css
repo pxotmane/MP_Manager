@@ -121,16 +121,21 @@ nav ul li a {
 /* Colonne Actions : largeur contenue */
 .actions-col { width: 96px; }
 
-/* 5. DataTables (tableau Tresorerie) ------------------------------------- */
-/* Le tableau ne descend jamais sous 100 % de la carte ; au-dela il defile
+/* 5. DataTables (tableaux Tresorerie + Marche) --------------------------- */
+/* Ces regles sont communes aux deux tableaux : le selecteur liste les deux
+   identifiants pour ne pas dupliquer le CSS a chaque nouveau tableau.
+   Le tableau ne descend jamais sous 100 % de la carte ; au-dela il defile
    dans le conteneur .table-responsive.                                      */
-#tresorerieTable { min-width: 100%; }
+#tresorerieTable,
+#marcheTable { min-width: 100%; }
 
-#tresorerieTable thead tr:first-child th {
+#tresorerieTable thead tr:first-child th,
+#marcheTable thead tr:first-child th {
     background-image: linear-gradient(180deg, var(--mp-blue) 0%, var(--mp-blue-600) 100%);
 }
 
-#tresorerieTable thead tr.filters th {
+#tresorerieTable thead tr.filters th,
+#marcheTable thead tr.filters th {
     background-color: var(--mp-bg);
     background-image: none;
     text-transform: none;
@@ -139,29 +144,35 @@ nav ul li a {
     padding: 6px 8px;
 }
 
-#tresorerieTable thead tr.filters input {
+#tresorerieTable thead tr.filters input,
+#marcheTable thead tr.filters input {
     font-size: 0.78rem;
     min-width: 70px;
 }
 
-#tresorerieTable td { vertical-align: middle; }
+#tresorerieTable td,
+#marcheTable td { vertical-align: middle; }
 
 /* Zebrage et survol : on neutralise le liseré interne de DataTables
    (box-shadow) au profit du CSS maison, pour que la colonne Actions figée
    ait EXACTEMENT la meme teinte que le reste de sa ligne. */
 #tresorerieTable.table-striped > tbody > tr.odd > *:not(.actions-col),
-#tresorerieTable.table-hover > tbody > tr:hover > *:not(.actions-col) {
+#tresorerieTable.table-hover > tbody > tr:hover > *:not(.actions-col),
+#marcheTable.table-striped > tbody > tr.odd > *:not(.actions-col),
+#marcheTable.table-hover > tbody > tr:hover > *:not(.actions-col) {
     box-shadow: none;
 }
 
 /* Colonne Actions figée a droite pendant le defilement horizontal -------- */
-#tresorerieTable thead tr th.actions-col {
+#tresorerieTable thead tr th.actions-col,
+#marcheTable thead tr th.actions-col {
     position: sticky;
     right: 0;
     z-index: 4;
 }
 
-#tresorerieTable tbody td.actions-col {
+#tresorerieTable tbody td.actions-col,
+#marcheTable tbody td.actions-col {
     position: sticky;
     right: 0;
     z-index: 2;
@@ -169,16 +180,28 @@ nav ul li a {
     box-shadow: -6px 0 8px -6px rgba(16, 24, 40, 0.15);
 }
 
-#tresorerieTable.table-striped > tbody > tr:nth-child(even) > td.actions-col {
+#tresorerieTable.table-striped > tbody > tr:nth-child(even) > td.actions-col,
+#marcheTable.table-striped > tbody > tr:nth-child(even) > td.actions-col {
     background-color: #f8f9fa;
 }
 
-#tresorerieTable.table-hover > tbody > tr:hover > td.actions-col {
+#tresorerieTable.table-hover > tbody > tr:hover > td.actions-col,
+#marcheTable.table-hover > tbody > tr:hover > td.actions-col {
     background-color: #eef5fb;
 }
 
 /* Contrôles DataTables --------------------------------------------------- */
 .dataTables_wrapper { margin-bottom: 0.5rem; }
+
+/* Dégagement supérieur et latéral : évite que le halo au focus ne soit rogné
+   en haut (par le bord de la carte) ou sur les côtés (padding de 3px). */
+.dataTables_wrapper > .row:first-child {
+    padding-top: 3px;    /* Espace en haut pour que le halo ne soit pas coupé */
+    padding-bottom: 6px; /* Aération sous les contrôles */
+    padding-left: 2px;   /* Espace à gauche pour le halo du sélecteur */
+    padding-right: 2px;  /* Espace à droite pour le halo de la recherche */
+    align-items: center;
+}
 
 /* Attention : ne PAS surcharger le padding du <select> (classe .form-select).
    Bootstrap réserve l'espace de sa flèche via padding-right: 2.25rem ; le
@@ -192,6 +215,21 @@ nav ul li a {
     border: 1px solid var(--mp-border);
     border-radius: 0.5rem;
     padding: 0.25rem 0.5rem;
+    margin-right: 3px; /* Marge à droite pour que le halo ne soit pas coupé par le bord de carte */
+}
+
+/* Halo au focus uniforme pour TOUS les champs du site (2px au lieu des 4px
+   / 0.25rem natifs de Bootstrap 5) : discret, fin et élégant sur l'ensemble
+   des formulaires, selects, champs de recherche et filtres du projet. */
+.form-control:focus,
+.form-select:focus,
+.dataTables_wrapper .dataTables_length select:focus,
+.dataTables_wrapper .dataTables_filter input:focus,
+#tresorerieTable thead tr.filters input:focus,
+#marcheTable thead tr.filters input:focus {
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.20) !important; /* Halo uniforme de 2px sur tout le site */
+    border-color: #86b7fe !important;                            /* Liseré bleu doux Bootstrap au focus */
+    outline: none !important;                                    /* Supprime le contour noir/pointillé par défaut */
 }
 
 .dataTables_wrapper .dataTables_info {
@@ -287,7 +325,7 @@ nav ul li a {
     padding: 0;
 }
 
-/* 7. Pills Budget / Nature (couleurs mates, desaturees) ------------------ */
+/* 7. Pills Budget / Nature / Marche (couleurs mates, desaturees) --------- */
 .badge-matte {
     display: inline-flex;
     align-items: center;
@@ -316,6 +354,9 @@ nav ul li a {
 .badge-matte-cyan { background-color: #E5F0F3; color: #22606E; border-color: #C7DFE5; }
 .badge-matte-indigo { background-color: #EAEBF7; color: #3E4A9C; border-color: #D3D6EE; }
 .badge-matte-amber { background-color: #FBF1E4; color: #8A5A1B; border-color: #F0DCC2; }
+/* Rouge : uniquement pour les marché résiliés (h harmonisée avec
+   .btn-soft-danger : meme fond #F7E9E9 et meme texte #8C2F2F). */
+.badge-matte-red { background-color: #F7E9E9; color: #8C2F2F; border-color: #EED2D2; }
 .badge-matte-slate { background-color: #EEF1F5; color: #4A5568; border-color: #DCE2EA; }
 .badge-matte-green-solid { background-color: var(--mp-green); color: #ffffff; }
 .badge-matte-blue-solid { background-color: var(--mp-blue); color: #ffffff; }

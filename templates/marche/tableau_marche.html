@@ -1,27 +1,130 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Liste des Marchés{% endblock %}
+{% load marche_extras %}
 
+{% block title %}Marchés — MP Manager{% endblock %}
+
+{% block extra_css %}
+<!-- CSS DataTables pour Bootstrap 5 -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
 
 {% block content %}
-<h1>Liste des Marchés</h1>
-<table class="table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Nom du Marché</th>
-            <th>Description</th>
-            <th>Date de Création</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for marche in marches %}
-        <tr>
-            <td>{{ marche.id }}</td>
-            <td>{{ marche.nom }}</td>
-            <td>{{ marche.description }}</td>
-            <td>{{ marche.date_creation }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-0 text-mp-blue">Marchés</h1>
+            <p class="text-muted-soft small mb-0">Fiches administratives et financières des marchés</p>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <!-- Conteneur de défilement : le tableau, s'il est plus large que la carte,
+             défile horizontalement À L'INTÉRIEUR de celle-ci. -->
+        <div class="table-responsive">
+            <table id="marcheTable" class="table table-striped table-hover">
+                <thead>
+                    <!-- Ligne 1 : titres (utilisés par le tri DataTables) -->
+                    <tr>
+                        <th>N° marché</th>
+                        <th>Exercice</th>
+                        <th>Budget</th>
+                        <th>Imputation</th>
+                        <th>Titulaire</th>
+                        <th>Objet</th>
+                        <th>Passation</th>
+                        <th>Type</th>
+                        <th>Délai (mois)</th>
+                        <th>Montant TTC</th>
+                        <th>Notification</th>
+                        <th>Statut</th>
+                        <th>Nantissement</th>
+                        <th class="actions-col text-center">Actions</th>
+                    </tr>
+                    <!-- Ligne 2 : filtres par colonne (tr.filters, isolée du reste du JS) -->
+                    <tr class="filters">
+                        <th data-placeholder="N° marché"></th>
+                        <th data-placeholder="Exercice"></th>
+                        <th data-placeholder="Budget"></th>
+                        <th data-placeholder="Imputation"></th>
+                        <th data-placeholder="Titulaire"></th>
+                        <th data-placeholder="Objet"></th>
+                        <th data-placeholder="Passation"></th>
+                        <th data-placeholder="Type"></th>
+                        <th data-placeholder="Délai"></th>
+                        <th data-placeholder="Montant"></th>
+                        <th data-filter="off"></th>
+                        <th data-placeholder="Statut"></th>
+                        <th data-placeholder="Nantissement"></th>
+                        <th class="actions-col" data-filter="off"></th><!-- Actions : jamais filtrée -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for marche in marches %}
+                    <tr>
+                        <td class="fw-semibold">{{ marche.num_marche }}</td>
+                        <td>{{ marche.exercice_budgetaire }}</td>
+                        <!-- Pill Budget : mêmes couleurs que la Trésorerie
+                             (INV = bleu, EXP = vert), pastille ajoutée en CSS. -->
+                        <td>
+                            <span class="badge-matte {{ marche.type_budget|type_budget_badge }}"
+                                  title="{{ marche.get_type_budget_display }}">{{ marche.get_type_budget_display|default:"Non renseigné" }}</span>
+                        </td>
+                        <td>{{ marche.imputation_budgetaire|default:"-" }}</td>
+                        <td class="text-truncate" style="max-width: 220px;" title="{{ marche.titulaire }}">{{ marche.titulaire }}</td>
+                        <td class="text-truncate" style="max-width: 320px;" title="{{ marche.objet }}">{{ marche.objet }}</td>
+                        <td>
+                            <span class="badge-matte {{ marche.mode_passation|mode_passation_badge }}"
+                                  title="{{ marche.get_mode_passation_display }}">{{ marche.get_mode_passation_display|default:"Non renseigné" }}</span>
+                        </td>
+                        <td>
+                            <span class="badge-matte {{ marche.type_marche|type_marche_badge }}"
+                                  title="{{ marche.get_type_marche_display }}">{{ marche.get_type_marche_display|default:"Non renseigné" }}</span>
+                        </td>
+                        <td>{{ marche.delai_execution|default:"-" }}</td>
+                        <td class="text-end fw-semibold">{{ marche.montant_global_ttc|floatformat:2|default:"-" }}</td>
+                        <td>{{ marche.date_notif_appro|date:"d/m/Y"|default:"-" }}</td>
+                        <!-- Pill Statut : Résilié > Soldé > En cours -->
+                        <td>
+                            <span class="badge-matte {{ marche|statut_badge }}">{{ marche|statut_libelle }}</span>
+                        </td>
+                        <!-- Pill Nantissement : alimentée par l'annotation
+                             `nantissement_existe` (une requête pour tout le tableau). -->
+                        <td>
+                            <span class="badge-matte {{ marche.nantissement_existe|nantissement_badge }}">{{ marche.nantissement_existe|nantissement_libelle }}</span>
+                        </td>
+                        <!-- Colonne Actions : isolée du script DataTables (ni tri, ni recherche, ni filtre)
+                             et figée à droite pendant le défilement horizontal (CSS). -->
+                        <td class="text-center text-nowrap actions-col">
+                            <div class="d-inline-flex gap-1">
+                                <a href="{% url 'fiche_marche' marche.pk %}"
+                                   class="btn btn-soft-primary btn-icon rounded-3"
+                                   data-bs-toggle="tooltip" data-bs-placement="top" title="Consulter la fiche"
+                                   aria-label="Consulter la fiche du marché {{ marche.num_marche }}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="14" class="text-center text-muted-soft py-4">
+                            <i class="bi bi-inbox me-1"></i>Aucun marché enregistré.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<!-- Scripts jQuery et DataTables (Bootstrap 5) -->
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<!-- Script du tableau : filtres par colonne + colonne Actions isolée -->
+<script src="{% static 'JS/marche-table.js' %}"></script>
 {% endblock %}

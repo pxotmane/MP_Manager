@@ -1,7 +1,204 @@
 {% extends "base.html" %}
 {% load static %}
-{% block title %}Marche{% endblock %}
+{% load marche_extras %}
+
+{% block title %}Marché {{ marche.num_marche }} — MP Manager{% endblock %}
 
 {% block content %}
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <div>
+            <h1 class="h3 mb-0 text-mp-blue">Marché n° {{ marche.num_marche }}</h1>
+            <p class="text-muted-soft small mb-0">{{ marche.objet|truncatechars:120 }}</p>
+        </div>
+        <a href="{% url 'tableau_marche' %}" class="btn btn-light border">
+            <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+        </a>
+    </div>
+
+    <div class="table-card">
+        <h2 class="h6 text-uppercase text-muted-soft mb-3">Identification</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <th style="width: 260px;">Numéro de marché</th>
+                        <td class="fw-semibold">{{ marche.num_marche }}</td>
+                    </tr>
+                    <tr>
+                        <th>Exercice budgétaire</th>
+                        <td>{{ marche.exercice_budgetaire }}</td>
+                    </tr>
+                    <tr>
+                        <th>Type de budget</th>
+                        <td>
+                            <span class="badge-matte {{ marche.type_budget|type_budget_badge }}">{{ marche.get_type_budget_display|default:"Non renseigné" }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Imputation budgétaire</th>
+                        <td>{{ marche.imputation_budgetaire|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Titulaire</th>
+                        <td>{{ marche.titulaire }}</td>
+                    </tr>
+                    <tr>
+                        <th>Objet du marché</th>
+                        <td>{{ marche.objet|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Mode de passation</th>
+                        <td>
+                            <span class="badge-matte {{ marche.mode_passation|mode_passation_badge }}">{{ marche.get_mode_passation_display|default:"Non renseigné" }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Type de marché</th>
+                        <td>
+                            <span class="badge-matte {{ marche.type_marche|type_marche_badge }}">{{ marche.get_type_marche_display|default:"Non renseigné" }}</span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Statut</th>
+                        <td>
+                            <span class="badge-matte {{ marche|statut_badge }}">{{ marche|statut_libelle }}</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h2 class="h6 text-uppercase text-muted-soft mb-3">Montants</h2>
+        <!-- L'unité est portée par l'intitulé de la ligne (et non accolée à la
+             valeur) : une valeur vide s'affiche alors « - », sans « - DH ». -->
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <th style="width: 260px;">Montant hors taxe (DH)</th>
+                        <td class="text-end fw-semibold">{{ marche.montant_ht|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Taux de TVA (%)</th>
+                        <td class="text-end">{{ marche.taux_tva|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Rabais (%)</th>
+                        <td class="text-end">{{ marche.taux_rabais|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Majoration (%)</th>
+                        <td class="text-end">{{ marche.taux_majoration|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Montant des avenants (DH)</th>
+                        <td class="text-end">{{ marche.avenant|floatformat:2 }}</td>
+                    </tr>
+                    <tr>
+                        <th>Montant global TTC (DH)</th>
+                        <td class="text-end fw-semibold">{{ marche.montant_global_ttc|floatformat:2|default:"-" }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h2 class="h6 text-uppercase text-muted-soft mb-3">Exécution &amp; garanties</h2>
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <th style="width: 260px;">Date de notification d'approbation</th>
+                        <td>{{ marche.date_notif_appro|date:"d/m/Y"|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Délai d'exécution</th>
+                        <td>{{ marche.delai_execution }} mois</td>
+                    </tr>
+                    <tr>
+                        <th>Caution provisoire (DH)</th>
+                        <td class="text-end">{{ marche.caution_provisoire|floatformat:2|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Caution définitive (DH)</th>
+                        <td class="text-end">{{ marche.caution_definitive|floatformat:2|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Retenue de garantie (DH)</th>
+                        <td class="text-end">{{ marche.retenue_garantie|floatformat:2|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>RIB</th>
+                        <td>{{ marche.rib|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Domiciliation bancaire</th>
+                        <td>{{ marche.dom_bancaire|default:"-" }}</td>
+                    </tr>
+                    <tr>
+                        <th>Informations supplémentaires</th>
+                        <td>{{ marche.info_supp|default:"-" }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="table-card">
+        <h2 class="h6 text-uppercase text-muted-soft mb-3">Documents liés</h2>
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Numéro</th>
+                        <th>Date</th>
+                        <th>Montant</th>
+                        <th>Détail</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% comment %}
+                        `{% empty %}` ne s'appliquerait qu'au dernier `{% for %}`
+                        (les pénalités) : un marché avec un nantissement mais
+                        aucune pénalité afficherait à tort la ligne « aucun
+                        document ». On teste donc la présence des deux listes.
+                    {% endcomment %}
+                    {% if marche.nantissements.all|length or marche.penalites.all|length %}
+                    {% for nantissement in marche.nantissements.all %}
+                    <tr>
+                        <td><span class="badge-matte badge-matte-teal">Nantissement</span></td>
+                        <td class="fw-semibold">{{ nantissement.num_acte }}</td>
+                        <td>{{ nantissement.date_nant|date:"d/m/Y" }}</td>
+                        <td class="text-end fw-semibold">{{ nantissement.mtt_nant|floatformat:2 }} DH</td>
+                        <td class="text-truncate" style="max-width: 320px;"
+                            title="{{ nantissement.entite_nant }} — {{ nantissement.dom_banc }}">{{ nantissement.entite_nant }} — {{ nantissement.dom_banc }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% for penalite in marche.penalites.all %}
+                    <tr>
+                        <td><span class="badge-matte badge-matte-amber">Pénalité</span></td>
+                        <td class="fw-semibold">{{ penalite.num_penalite }}</td>
+                        <td>{{ penalite.date_penalite|date:"d/m/Y" }}</td>
+                        <td class="text-end fw-semibold">{{ penalite.mtt_penalite|floatformat:2 }} DH</td>
+                        <td class="text-truncate" style="max-width: 320px;"
+                            title="{{ penalite.motif_penalite }}">{{ penalite.motif_penalite }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted-soft py-4">
+                            <i class="bi bi-inbox me-1"></i>Aucun nantissement ni pénalité rattaché à ce marché.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 {% endblock %}
