@@ -145,3 +145,84 @@ class Tresorerie(models.Model):
 
     def __str__(self):
         return f"OP {self.op}/{self.exercice} - {self.beneficiaires}"
+
+
+class OrdreRecette(HorodatageMixin):
+    """Ordre de recette dans la trésorerie."""
+
+    class Nature(models.TextChoices):
+        ALIMENTATION = "ALIMENTATION DE LA TRESORERIE", "Alimentation de la trésorerie"
+        CONFISCATION = "RECETTES CONFISCATION", "Recettes confiscation"
+        PENALITES = "PENALITES DE RETARD", "Pénalités de retard"
+        REJET_TGR = "REJET DE LA TGR", "Rejet de la TGR"
+
+    class TypeBudget(models.TextChoices):
+        EXPLOITATION = "EXPLOITATION", "Exploitation"
+        INVESTISSEMENT = "INVESTISSEMENT", "Investissement"
+
+    class Etat(models.TextChoices):
+        NON_ETABLI = "NON ETABLI", "Non établi"
+        ETABLI = "ETABLI", "Établi"
+
+    exercice = models.PositiveSmallIntegerField(
+        verbose_name="Exercice budgétaire",
+        help_text="Année de l'exercice (ex: 2026)",
+    )
+    num_ordre = models.PositiveIntegerField(
+        verbose_name="N° d'ordre de recette",
+    )
+    date_decision = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Date de décision",
+    )
+    num_decision = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="N° de décision",
+    )
+    debiteur = models.CharField(
+        max_length=255,
+        verbose_name="Débiteur",
+    )
+    nature = models.CharField(
+        max_length=50,
+        choices=Nature.choices,
+        verbose_name="Nature",
+    )
+    budget = models.CharField(
+        max_length=20,
+        choices=TypeBudget.choices,
+        verbose_name="Budget",
+    )
+    date_encaissement = models.DateField(
+        null=True,
+        blank=True,
+        verbose_name="Date d'encaissement",
+    )
+    montant = models.DecimalField(
+        max_digits=14,
+        decimal_places=2,
+        verbose_name="Montant (DH)",
+    )
+    etat = models.CharField(
+        max_length=20,
+        choices=Etat.choices,
+        default=Etat.NON_ETABLI,
+        verbose_name="État",
+    )
+    observation = models.TextField(
+        blank=True,
+        verbose_name="Observation / Notes",
+    )
+
+    class Meta:
+        verbose_name = "Ordre de Recette"
+        verbose_name_plural = "Ordres de Recette"
+        ordering = ["-exercice", "num_ordre"]
+        indexes = [
+            models.Index(fields=["exercice", "num_ordre"]),
+        ]
+
+    def __str__(self):
+        return f"OR N°{self.num_ordre}/{self.exercice} - {self.debiteur} ({self.montant} DH)"

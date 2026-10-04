@@ -2,11 +2,11 @@ from decimal import Decimal
 from django.contrib import messages
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
-from .models import Tresorerie, BudgetExercice
-from .forms import BudgetExerciceForm
+from .models import Tresorerie, BudgetExercice, OrdreRecette
+from .forms import BudgetExerciceForm, OrdreRecetteForm
 
 # Create your views here.
 # Call the template created in the templates folder to display the table of the Tresorerie model
@@ -191,4 +191,86 @@ class BudgetExerciceDeleteView(DeleteView):
     model = BudgetExercice
     template_name = "tr_tableau/budget_confirm_delete.html"
     success_url = reverse_lazy("suivi_paiement")
+
+
+class SituationRecettesView(TemplateView):
+    """
+    Tableau de situation des ordres de recette dans la trésorerie
+    selon le modèle table_canvas/situation_recettes.md.
+    """
+    template_name = "tr_tableau/situation_recettes.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Filtre exercice optionnel
+        exercice_param = self.request.GET.get("exercice")
+        recettes_qs = OrdreRecette.objects.all()
+
+        exercices_disponibles = sorted(
+            list(OrdreRecette.objects.values_list("exercice", flat=True).distinct()),
+            reverse=True,
+        )
+
+        exercice_actuel = None
+        if exercice_param:
+            try:
+                exercice_actuel = int(exercice_param)
+                recettes_qs = recettes_qs.filter(exercice=exercice_actuel)
+            except ValueError:
+                pass
+
+        # Total des recettes (pour l'exercice sélectionné ou global)
+        total_recettes = (
+            recettes_qs.aggregate(
+                total=Coalesce(Sum("montant"), Decimal("0.00"))
+            )["total"]
+        )
+
+        context.update({
+            "recettes_list": recettes_qs,
+            "total_recettes": total_recettes,
+            "exercices_disponibles": exercices_disponibles,
+            "exercice_actuel": exercice_actuel,
+            "recette_form": OrdreRecetteForm(),
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        """Ajout ou modification rapide d'un ordre de recette via fenêtre modale."""
+        recette_id = request.POST.get("recette_id")
+        instance = None
+        if recette_id:
+            instance = get_object_or_404(OrdreRecette, pk=recette_id)
+
+        form = OrdreRecetteForm(request.POST, instance=instance)
+        if form.is_valid():
+            recette = form.save()
+            action_label = "mis à jour" if instance else "créé"
+            messages.success(
+                request,
+                f"L'ordre de recette N°{recette.num_ordre}/{recette.exercice} ({recette.debiteur}) a été {action_label} avec succès.",
+            )
+        else:
+            messages.error(
+                request,
+                "Erreur lors de l'enregistrement de l'ordre de recette. Veuillez vérifier les données saisies.",
+            )
+        redirect_url = reverse_lazy("situation_recettes")
+        exercice = request.POST.get("exercice")
+        if exercice:
+            return redirect(f"{redirect_url}?exercice={exercice}")
+        return redirect(redirect_url)
+
+
+class OrdreRecetteDeleteView(DeleteView):
+    model = OrdreRecette
+    success_url = reverse_lazy("situation_recettes")
+
+    def post(self, request, *args, **kwargs):
+        obj = self.get_object()
+        label = f"N°{obj.num_ordre}/{obj.exercice} — {obj.debiteur}"
+        response = super().post(request, *args, **kwargs)
+        messages.success(request, f"L'ordre de recette {label} a été supprimé avec succès.")
+        return response
 

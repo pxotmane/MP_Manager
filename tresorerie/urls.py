@@ -33,4 +33,14 @@ urlpatterns = [
         views.BudgetExerciceDeleteView.as_view(),
         name="budget_delete",
     ),
+    path(
+        "tresorerie/situation-recettes/",
+        views.SituationRecettesView.as_view(),
+        name="situation_recettes",
+    ),
+    path(
+        "tresorerie/recette/<int:pk>/supprimer/",
+        views.OrdreRecetteDeleteView.as_view(),
+        name="recette_delete",
+    ),
 ]

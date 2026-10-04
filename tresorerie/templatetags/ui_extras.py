@@ -19,6 +19,8 @@ _BUDGET_BADGES = {
     "RAM INV": "badge-matte-blue",
     "BUDGET EXP": "badge-matte-green-solid",
     "BUDGET INV": "badge-matte-blue-solid",
+    "EXPLOITATION": "badge-matte-green-solid",
+    "INVESTISSEMENT": "badge-matte-blue-solid",
 }
 
 _NATURE_BADGES = {
@@ -29,6 +31,15 @@ _NATURE_BADGES = {
     "INDEMNITE DEPLACEMENT": "badge-matte-cyan",
     "FRAIS AUTORISATION": "badge-matte-amber",
     "INSERSTION": "badge-matte-slate",
+    "ALIMENTATION DE LA TRESORERIE": "badge-matte-blue",
+    "RECETTES CONFISCATION": "badge-matte-indigo",
+    "PENALITES DE RETARD": "badge-matte-amber",
+    "REJET DE LA TGR": "badge-matte-red",
+}
+
+_ETAT_RECETTE_BADGES = {
+    "ETABLI": "badge-matte-green",
+    "NON ETABLI": "badge-matte-amber",
 }
 
 _DEFAULT_BADGE = "badge-matte-slate"
@@ -44,6 +55,12 @@ def budget_badge(value):
 def nature_badge(value):
     """Classe CSS de la pill du champ « nature »."""
     return _NATURE_BADGES.get(value or "", _DEFAULT_BADGE)
+
+
+@register.filter
+def etat_recette_badge(value):
+    """Classe CSS de la pill du champ « etat » d'une recette."""
+    return _ETAT_RECETTE_BADGES.get(value or "", _DEFAULT_BADGE)
 
 
 @register.filter
