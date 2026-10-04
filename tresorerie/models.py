@@ -1,4 +1,49 @@
+from decimal import Decimal
 from django.db import models
+from core.coreFcn import HorodatageMixin
+
+
+class BudgetExercice(HorodatageMixin):
+    """Crédits budgétaires annuels par exercice (Exploitation et Investissement)."""
+
+    exercice = models.PositiveSmallIntegerField(
+        unique=True,
+        verbose_name="Exercice budgétaire",
+        help_text="Année budgétaire (ex: 2026, 2025...)",
+    )
+    credit_exploitation = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Crédit Exploitation",
+        help_text="Crédit budgétaire alloué en dirhams (Exploitation)",
+    )
+    credit_investissement = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        verbose_name="Crédit Investissement",
+        help_text="Crédit budgétaire alloué en dirhams (Investissement)",
+    )
+    observation = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Observation / Notes",
+    )
+
+    class Meta:
+        verbose_name = "Budget par Exercice"
+        verbose_name_plural = "Budgets par Exercice"
+        ordering = ["-exercice"]
+
+    @property
+    def total_credit(self):
+        return (self.credit_exploitation or Decimal("0.00")) + (
+            self.credit_investissement or Decimal("0.00")
+        )
+
+    def __str__(self):
+        return f"Budget {self.exercice} — Total: {self.total_credit} DH"
 
 
 class Tresorerie(models.Model):

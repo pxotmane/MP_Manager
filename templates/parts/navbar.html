@@ -17,25 +17,25 @@
       <!-- main navigation bar -->
       <ul class="navbar-nav me-auto">  
         {% if user.is_authenticated %}
-        <li class="nav-item">
-          <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Accueil</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'tresorerie_table' %}">Tresorerie</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'tableau_marche' %}">Marchés</a>
-        </li>
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            Dropdown link
-          </a>
-          <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-            <li><a class="dropdown-item" href="#">Action</a></li>
-            <li><a class="dropdown-item" href="#">Another action</a></li>
-            <li><a class="dropdown-item" href="#">Something else here</a></li>
-          </ul>
-        </li>
+          <li class="nav-item">
+            <a class="nav-link active" aria-current="page" href="{% url 'index' %}">Accueil</a>
+          </li>
+          {% comment %} <li class="nav-item">
+            <a class="nav-link" href="{% url 'tresorerie_table' %}">Tresorerie</a>
+          </li> {% endcomment %}
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="" id="navbarDropdownMenuLink" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              Tresorerie
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+              <li><a class="dropdown-item" href="{% url 'tresorerie_table' %}">Suivi de tresorerie</a></li>
+              <li><a class="dropdown-item" href="{% url 'suivi_paiement' %}">Suivi de paiement</a></li>
+              <li><a class="dropdown-item" href="#">Journal de trésorerie</a></li>
+            </ul>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'tableau_marche' %}">Marchés</a>
+          </li>
         {% endif %}
       </ul>
       <!-- user info and logout button -->

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Confirmer la suppression du budget — MP Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-6">
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-header border-bottom py-3">
+                <h1 class="h5 mb-0 text-mp-blue">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirmer la suppression
+                </h1>
+            </div>
+            <div class="card-body p-4">
+                <p class="mb-3">
+                    Voulez-vous vraiment supprimer les données de crédits budgétaires de l'exercice
+                    <strong>{{ object.exercice }}</strong> ?
+                </p>
+                <ul class="list-unstyled small mb-4">
+                    <li><span class="text-muted-soft">Crédit Exploitation :</span> {{ object.credit_exploitation|floatformat:2 }} DH</li>
+                    <li><span class="text-muted-soft">Crédit Investissement :</span> {{ object.credit_investissement|floatformat:2 }} DH</li>
+                    <li><span class="text-muted-soft">Total Crédit :</span> {{ object.total_credit|floatformat:2 }} DH</li>
+                </ul>
+                <p class="text-danger small mb-4">
+                    <i class="bi bi-info-circle me-1"></i>Cette action supprimera les plafonds budgétaires enregistrés pour cette année (les ordres de paiement associés dans la trésorerie ne seront pas modifiés).
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'suivi_paiement' %}" class="btn btn-light border">Annuler</a>
+                        <button type="submit" class="btn btn-matte-danger">
+                            <i class="bi bi-trash3 me-1"></i>Supprimer définitivement
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

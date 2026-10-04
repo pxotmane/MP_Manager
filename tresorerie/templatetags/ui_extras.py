@@ -44,3 +44,17 @@ def budget_badge(value):
 def nature_badge(value):
     """Classe CSS de la pill du champ « nature »."""
     return _NATURE_BADGES.get(value or "", _DEFAULT_BADGE)
+
+
+@register.filter
+def format_montant(value):
+    """Formate un montant monétaire en dirhams (ex: 1 250 450,00)."""
+    if value is None or value == "":
+        return "-"
+    try:
+        val = float(value)
+        if val == 0:
+            return "0,00"
+        return f"{val:,.2f}".replace(",", " ").replace(".", ",")
+    except (ValueError, TypeError):
+        return value

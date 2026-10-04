@@ -23,4 +23,14 @@ urlpatterns = [
         views.TresorerieDeleteView.as_view(),
         name="tresorerie_delete",
     ),
+    path(
+        "tresorerie/suivi-paiement/",
+        views.SuiviPaiementView.as_view(),
+        name="suivi_paiement",
+    ),
+    path(
+        "tresorerie/budget/<int:pk>/supprimer/",
+        views.BudgetExerciceDeleteView.as_view(),
+        name="budget_delete",
+    ),
 ]

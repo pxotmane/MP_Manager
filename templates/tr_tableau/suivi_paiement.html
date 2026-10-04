@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+{% load static %}
+{% load ui_extras %}
+{% load l10n %}
+
+{% block title %}Suivi des Paiements — MP Manager{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Styles spécifiques au tableau croisé Suivi de paiement */
+    .table-suivi thead tr:first-child th {
+        border-bottom: none;
+        font-size: 0.82rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding-top: 10px;
+        padding-bottom: 8px;
+    }
+    .table-suivi thead tr:nth-child(2) th {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        padding-top: 6px;
+        padding-bottom: 8px;
+    }
+    .th-exp {
+        background-color: var(--mp-green) !important;
+        color: #ffffff !important;
+    }
+    .th-exp-sub {
+        background-color: #24543E !important;
+        color: #e2f0e8 !important;
+    }
+    .th-inv {
+        background-color: var(--mp-blue-600) !important;
+        color: #ffffff !important;
+    }
+    .th-inv-sub {
+        background-color: var(--mp-blue) !important;
+        color: #dbe7f2 !important;
+    }
+    .th-total {
+        background-color: #123449 !important;
+        color: #ffffff !important;
+    }
+    .th-total-sub {
+        background-color: #0b2230 !important;
+        color: #cadbee !important;
+    }
+    .table-suivi tfoot tr th {
+        background-color: #17405E !important;
+        color: #ffffff !important;
+        font-size: 0.88rem;
+        font-weight: 700;
+        padding: 12px 10px;
+        border-top: 2px solid #0f2c42;
+    }
+    .table-suivi tbody td {
+        vertical-align: middle;
+        font-variant-numeric: tabular-nums;
+        font-size: 0.86rem;
+    }
+    .badge-taux {
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.35em 0.6em;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h1 class="h3 mb-0 text-mp-blue">Suivi des Paiements</h1>
+        <p class="text-muted-soft small mb-0">Rapprochement annuel des crédits alloués et des décaissements effectifs</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <!-- Filtre Statut des OP -->
+        <div class="btn-group btn-group-sm" role="group" aria-label="Filtre paiement">
+            <a href="?statut=decaisse" class="btn {% if filtre_statut == 'decaisse' %}btn-matte-primary{% else %}btn-outline-secondary{% endif %}">
+                <i class="bi bi-check-circle me-1"></i>Décaissements réels
+            </a>
+            <a href="?statut=tous" class="btn {% if filtre_statut == 'tous' %}btn-matte-primary{% else %}btn-outline-secondary{% endif %}">
+                <i class="bi bi-collection me-1"></i>Tous les OP
+            </a>
+        </div>
+
+        <!-- Bouton Ajouter / Modifier un crédit -->
+        <button type="button" class="btn btn-matte-success btn-sm" data-bs-toggle="modal" data-bs-target="#budgetModal" onclick="openAddModal()">
+            <i class="bi bi-plus-lg me-1"></i>Saisir un Crédit
+        </button>
+
+        <!-- Bouton Imprimer -->
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i>Imprimer
+        </button>
+    </div>
+</div>
+
+<!-- Messages de confirmation ou d'erreur -->
+{% if messages %}
+    {% for message in messages %}
+        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show py-2" role="alert">
+            <i class="bi bi-info-circle me-2"></i>{{ message }}
+            <button type="button" class="btn-close py-2" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endfor %}
+{% endif %}
+
+<!-- Tableau principal -->
+<div class="table-card">
+    <div class="table-responsive">
+        <table class="table table-bordered table-hover table-suivi mb-0">
+            <thead>
+                <!-- Ligne 1 : Regroupement par grandes rubriques -->
+                <tr>
+                    <th rowspan="2" class="align-middle text-center" style="background-color: var(--mp-blue); color: #fff; width: 90px;">
+                        Exercice
+                    </th>
+                    <th colspan="2" class="text-center th-exp">
+                        <i class="bi bi-gear-wide-connected me-1"></i>Exploitation
+                    </th>
+                    <th colspan="2" class="text-center th-inv">
+                        <i class="bi bi-building-up me-1"></i>Investissement
+                    </th>
+                    <th colspan="3" class="text-center th-total">
+                        <i class="bi bi-calculator me-1"></i>Total Général
+                    </th>
+                    <th rowspan="2" class="align-middle text-center actions-col" style="background-color: var(--mp-blue); color: #fff; width: 85px;">
+                        Actions
+                    </th>
+                </tr>
+                <!-- Ligne 2 : Sous-colonnes Crédit & Paiement -->
+                <tr>
+                    <th class="text-end th-exp-sub" style="width: 140px;">Crédit (DH)</th>
+                    <th class="text-end th-exp-sub" style="width: 140px;">Paiement (DH)</th>
+                    <th class="text-end th-inv-sub" style="width: 140px;">Crédit (DH)</th>
+                    <th class="text-end th-inv-sub" style="width: 140px;">Paiement (DH)</th>
+                    <th class="text-end th-total-sub" style="width: 150px;">Total Crédit (DH)</th>
+                    <th class="text-end th-total-sub" style="width: 150px;">Total Paiement (DH)</th>
+                    <th class="text-center th-total-sub" style="width: 100px;">Taux (%)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in lignes %}
+                <tr>
+                    <!-- Exercice -->
+                    <td class="text-center fw-bold text-mp-blue">{{ ligne.exercice }}</td>
+
+                    <!-- Exploitation -->
+                    <td class="text-end {% if ligne.credit_exp > 0 %}text-dark{% else %}text-muted-soft{% endif %}">
+                        {{ ligne.credit_exp|format_montant }}
+                    </td>
+                    <td class="text-end fw-semibold text-mp-green">
+                        {{ ligne.paiement_exp|format_montant }}
+                    </td>
+
+                    <!-- Investissement -->
+                    <td class="text-end {% if ligne.credit_inv > 0 %}text-dark{% else %}text-muted-soft{% endif %}">
+                        {{ ligne.credit_inv|format_montant }}
+                    </td>
+                    <td class="text-end fw-semibold text-mp-blue">
+                        {{ ligne.paiement_inv|format_montant }}
+                    </td>
+
+                    <!-- Totaux par ligne -->
+                    <td class="text-end fw-bold text-dark">
+                        {{ ligne.total_credit|format_montant }}
+                    </td>
+                    <td class="text-end fw-bold" style="color: var(--mp-blue-dark);">
+                        {{ ligne.total_paiement|format_montant }}
+                    </td>
+
+                    <!-- Taux de réalisation -->
+                    <td class="text-center">
+                        {% if ligne.taux is not None %}
+                            <span class="badge {% if ligne.taux > 100 %}bg-danger{% elif ligne.taux >= 80 %}bg-success{% elif ligne.taux >= 50 %}bg-primary{% else %}bg-secondary{% endif %} badge-taux">
+                                {{ ligne.taux|floatformat:1 }} %
+                            </span>
+                        {% else %}
+                            <span class="text-muted-soft">-</span>
+                        {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="text-center text-nowrap actions-col">
+                        <div class="d-inline-flex gap-1">
+                            <button type="button"
+                                    class="btn btn-soft-primary btn-icon rounded-3"
+                                    title="Modifier le crédit de {{ ligne.exercice }}"
+                                    onclick="openEditModal('{{ ligne.exercice }}', '{{ ligne.credit_exp|unlocalize }}', '{{ ligne.credit_inv|unlocalize }}', '{{ ligne.budget_obj.observation|default:''|escapejs }}')">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
+                            {% if ligne.budget_obj %}
+                            <a href="{% url 'budget_delete' ligne.budget_obj.pk %}"
+                               class="btn btn-soft-danger btn-icon rounded-3"
+                               title="Supprimer les crédits de {{ ligne.exercice }}">
+                                <i class="bi bi-trash3"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <!-- Ligne Total Général -->
+                <tr>
+                    <th class="text-center">Total général</th>
+                    <th class="text-end">{{ totaux.credit_exp|format_montant }}</th>
+                    <th class="text-end">{{ totaux.paiement_exp|format_montant }}</th>
+                    <th class="text-end">{{ totaux.credit_inv|format_montant }}</th>
+                    <th class="text-end">{{ totaux.paiement_inv|format_montant }}</th>
+                    <th class="text-end">{{ totaux.total_credit|format_montant }}</th>
+                    <th class="text-end">{{ totaux.total_paiement|format_montant }}</th>
+                    <th class="text-center">
+                        {% if totaux.taux is not None %}
+                            <span class="badge bg-light text-dark fw-bold px-2 py-1">
+                                {{ totaux.taux|floatformat:1 }} %
+                            </span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </th>
+                    <th class="text-center">-</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Ajout / Modification Crédit Budgétaire -->
+<div class="modal fade" id="budgetModal" tabindex="-1" aria-labelledby="budgetModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h5 class="modal-title text-mp-blue fw-semibold" id="budgetModalLabel">
+                    <i class="bi bi-coin me-2"></i><span id="modalTitle">Saisie des Crédits Budgétaires</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form method="post" action="{% url 'suivi_paiement' %}">
+                {% csrf_token %}
+                <div class="modal-body p-4">
+                    <p class="text-muted-soft small mb-3">
+                        Indiquez les montants alloués au budget pour l'exercice concerné. Si un enregistrement existe déjà pour cette année, il sera mis à jour.
+                    </p>
+
+                    <div class="mb-3">
+                        <label for="id_exercice" class="form-label fw-semibold">Exercice budgétaire (Année) <span class="text-danger">*</span></label>
+                        <input type="number" name="exercice" id="id_exercice" class="form-control" placeholder="Ex: 2026" min="1990" max="2100" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_credit_exploitation" class="form-label fw-semibold">Crédit Exploitation (DH)</label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" name="credit_exploitation" id="id_credit_exploitation" class="form-control" placeholder="0.00" value="0.00" required>
+                            <span class="input-group-text bg-light">DH</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="id_credit_investissement" class="form-label fw-semibold">Crédit Investissement (DH)</label>
+                        <div class="input-group">
+                            <input type="number" step="0.01" name="credit_investissement" id="id_credit_investissement" class="form-control" placeholder="0.00" value="0.00" required>
+                            <span class="input-group-text bg-light">DH</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-2">
+                        <label for="id_observation" class="form-label fw-semibold">Notes / Observations</label>
+                        <input type="text" name="observation" id="id_observation" class="form-control" placeholder="Facultatif (ex: Budget initial voté...)">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-matte-primary btn-sm">
+                        <i class="bi bi-check2-circle me-1"></i>Enregistrer le budget
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const budgetModal = new bootstrap.Modal(document.getElementById('budgetModal'));
+
+    function openAddModal() {
+        document.getElementById('modalTitle').textContent = "Ajouter un Crédit Budgétaire";
+        document.getElementById('id_exercice').value = new Date().getFullYear();
+        document.getElementById('id_exercice').readOnly = false;
+        document.getElementById('id_credit_exploitation').value = "0.00";
+        document.getElementById('id_credit_investissement').value = "0.00";
+        document.getElementById('id_observation').value = "";
+    }
+
+    function openEditModal(exercice, creditExp, creditInv, observation) {
+        document.getElementById('modalTitle').textContent = `Modifier le Crédit de l'exercice ${exercice}`;
+        document.getElementById('id_exercice').value = exercice;
+        document.getElementById('id_credit_exploitation').value = creditExp || "0.00";
+        document.getElementById('id_credit_investissement').value = creditInv || "0.00";
+        document.getElementById('id_observation').value = observation || "";
+        budgetModal.show();
+    }
+</script>
+{% endblock %}
