@@ -207,9 +207,8 @@ class SituationRecettesView(TemplateView):
         exercice_param = self.request.GET.get("exercice")
         recettes_qs = OrdreRecette.objects.all()
 
-        exercices_disponibles = sorted(
-            list(OrdreRecette.objects.values_list("exercice", flat=True).distinct()),
-            reverse=True,
+        exercices_disponibles = set(
+            list(OrdreRecette.objects.values_list("exercice", flat=True).distinct())
         )
 
         exercice_actuel = None

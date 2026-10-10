@@ -16,10 +16,10 @@
         border-left: 5px solid var(--mp-blue);
         border-radius: 10px;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
-        padding: 18px 24px;
+        padding: 12px 16px;
         transition: transform 0.15s ease, box-shadow 0.15s ease;
     }
-    .recette-kpi-card:hover {
+    /*.recette-kpi-card:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     }
@@ -33,9 +33,9 @@
         background-color: #E8EFF6;
         color: var(--mp-blue);
         font-size: 1.6rem;
-    }
+    }*/
     .recette-kpi-amount {
-        font-size: 1.85rem;
+        font-size: 1.25rem;
         font-weight: 700;
         color: var(--mp-blue);
         line-height: 1.1;
@@ -84,24 +84,24 @@
     <!-- SECTION TOP DU TABLEAU : Total des recettes & Sélecteur d'exercice -->
     <div class="row g-3 align-items-center mb-4">
         <!-- Carte unique : Total des recettes à fournir -->
-        <div class="col-md-6 col-lg-5">
+        <div class="col-md-3 col-lg-2">
             <div class="recette-kpi-card d-flex align-items-center justify-content-between">
                 <div>
                     <div class="recette-kpi-label mb-1">
-                        Total des recettes à fournir {% if exercice_actuel %}(Exercice {{ exercice_actuel }}){% endif %}
+                        Total des recettes {% if exercice_actuel %}(Exercice {{ exercice_actuel }}){% endif %}
                     </div>
                     <div class="recette-kpi-amount">
                         {{ total_recettes|format_montant }} <span class="fs-6 fw-semibold text-muted">DH</span>
                     </div>
                 </div>
-                <div class="recette-kpi-icon">
+                {% comment %} <div class="recette-kpi-icon">
                     <i class="bi bi-cash-coin"></i>
-                </div>
+                </div> {% endcomment %}
             </div>
         </div>
 
         <!-- Filtre rapide par Exercice budgétaire -->
-        <div class="col-md-6 col-lg-7 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
+        <div class="col-md-9 col-lg-10 d-flex justify-content-md-end align-items-center gap-2 flex-wrap">
             <span class="small fw-semibold text-muted">Filtrer par Exercice :</span>
             <div class="btn-group btn-group-sm" role="group" aria-label="Filtre exercice">
                 <a href="{% url 'situation_recettes' %}" class="btn {% if not exercice_actuel %}btn-matte-primary{% else %}btn-outline-secondary{% endif %}">
