@@ -9,6 +9,11 @@ urlpatterns = [
         name="tresorerie_table",
     ),
     path(
+        "tresorerie/journal/",
+        views.JournalTresorerieView.as_view(),
+        name="journal_tresorerie",
+    ),
+    path(
         "tresorerie/ajouter/",
         views.TresorerieCreateView.as_view(),
         name="tresorerie_add",

@@ -46,6 +46,29 @@ class BudgetExercice(HorodatageMixin):
         return f"Budget {self.exercice} — Total: {self.total_credit} DH"
 
 
+class SoldeOuvertureExercice(models.Model):
+    """Solde bancaire constaté au 31 décembre précédant un exercice."""
+
+    exercice = models.PositiveSmallIntegerField(
+        unique=True,
+        verbose_name="Exercice budgétaire",
+    )
+    montant = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        verbose_name="Solde au 31/12 de l'exercice précédent (DH)",
+    )
+    observation = models.CharField(max_length=255, blank=True, verbose_name="Observation")
+
+    class Meta:
+        ordering = ["-exercice"]
+        verbose_name = "Solde d'ouverture"
+        verbose_name_plural = "Soldes d'ouverture"
+
+    def __str__(self):
+        return f"Solde d'ouverture {self.exercice}: {self.montant} DH"
+
+
 class Tresorerie(models.Model):
     """Feuille Excel TRESORERIE -- suivi d'un ordre de paiement (OP) jusqu'au décaissement."""
 
@@ -64,7 +87,7 @@ class Tresorerie(models.Model):
         INSER = "INSERSTION", "Insertion"
         IND_DPL = "INDEMNITE DEPLACEMENT", "Indemnité de déplacement"
         # AUTRE = "AUTRE", "Autre"  # Liste incomplète dans la source ("Marché, Heures supp...") -- à compléter.
-
+    date_arrive = models.DateField(null=True, blank=True, verbose_name="Date d'arrivée")    
     op = models.PositiveIntegerField(verbose_name="Numéro d'OP")
     ov = models.CharField(
         max_length=30,

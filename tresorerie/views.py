@@ -1,12 +1,24 @@
 from decimal import Decimal
+
 from django.contrib import messages
 from django.db.models import Sum, Q
 from django.db.models.functions import Coalesce
 from django.shortcuts import redirect, get_object_or_404
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, TemplateView
-from .models import Tresorerie, BudgetExercice, OrdreRecette
-from .forms import BudgetExerciceForm, OrdreRecetteForm
+from .models import (
+    Tresorerie,
+    BudgetExercice,
+    OrdreRecette,
+    SoldeOuvertureExercice,
+)
+from .forms import (
+    BudgetExerciceForm,
+    OrdreRecetteForm,
+    SoldeOuvertureExerciceForm,
+    TresorerieForm,
+)
 
 # Create your views here.
 # Call the template created in the templates folder to display the table of the Tresorerie model
@@ -16,6 +28,275 @@ class TresorerieListView(ListView):
     model = Tresorerie
     template_name = "tr_tableau/tresorerie_table.html"
     context_object_name = "tresorerie_list"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context.setdefault("add_form", TresorerieForm())
+        context.setdefault("open_add_modal", False)
+        context.setdefault("modal_mode", "add")
+        return context
+
+    def post(self, request, *args, **kwargs):
+        edit_id = request.POST.get("edit_id")
+        instance = get_object_or_404(Tresorerie, pk=edit_id) if edit_id else None
+        form = TresorerieForm(request.POST, instance=instance)
+        if form.is_valid():
+            tresorerie = form.save()
+            action = "modifié" if instance else "ajouté"
+            messages.success(
+                request,
+                f"L'OP {tresorerie.op}/{tresorerie.exercice} a été {action} avec succès.",
+            )
+            return redirect("tresorerie_table")
+
+        self.object_list = self.get_queryset()
+        return self.render_to_response(
+            self.get_context_data(
+                add_form=form,
+                open_add_modal=True,
+                modal_mode="edit" if instance else "add",
+                edit_instance=instance,
+            )
+        )
+
+
+class JournalTresorerieView(TemplateView):
+    template_name = "tr_tableau/journal_tresorerie.html"
+
+    def get_selected_exercise(self, raw_value=None):
+        value = raw_value if raw_value is not None else self.request.GET.get("exercice")
+        try:
+            year = int(value) if value else timezone.localdate().year
+        except (TypeError, ValueError):
+            year = timezone.localdate().year
+        return year if 1 <= year <= 9999 else timezone.localdate().year
+
+    def get_selected_month(self, raw_value=None):
+        value = raw_value if raw_value is not None else self.request.GET.get("mois")
+        try:
+            month = int(value) if value else None
+        except (TypeError, ValueError):
+            return None
+        return month if month is not None and 1 <= month <= 12 else None
+
+    def get_exercise_options(self, selected_exercise):
+        years = {selected_exercise}
+        years.update(
+            SoldeOuvertureExercice.objects.values_list("exercice", flat=True)
+        )
+        years.update(Tresorerie.objects.values_list("exercice", flat=True))
+        years.update(OrdreRecette.objects.values_list("exercice", flat=True))
+        years.update(
+            year
+            for year in Tresorerie.objects.values_list(
+                "date_decaissement__year", flat=True
+            ).distinct()
+            if year
+        )
+        years.update(
+            year
+            for year in OrdreRecette.objects.values_list(
+                "date_encaissement__year", flat=True
+            ).distinct()
+            if year
+        )
+        return sorted((year for year in years if year), reverse=True)
+
+    def get_journal_entries(self, exercice):
+        mouvements = []
+        for recette in OrdreRecette.objects.filter(
+            date_encaissement__year=exercice
+        ):
+            mouvements.append(
+                {
+                    "date": recette.date_encaissement,
+                    "type_order": 0,
+                    "number": recette.num_ordre,
+                    "or_number": recette.num_ordre,
+                    "op_number": None,
+                    "reference": recette.num_decision,
+                    "debit": None,
+                    "credit": recette.montant,
+                }
+            )
+
+        for paiement in Tresorerie.objects.filter(
+            date_decaissement__year=exercice
+        ):
+            mouvements.append(
+                {
+                    "date": paiement.date_decaissement,
+                    "type_order": 1,
+                    "number": paiement.op,
+                    "or_number": None,
+                    "op_number": paiement.op,
+                    "reference": paiement.ov or "",
+                    "debit": paiement.montant,
+                    "credit": None,
+                }
+            )
+
+        mouvements.sort(
+            key=lambda mouvement: (
+                mouvement["date"],
+                mouvement["type_order"],
+                mouvement["number"],
+            )
+        )
+
+        cumul_debit = Decimal("0.00")
+        cumul_credit = Decimal("0.00")
+        opening_balance = SoldeOuvertureExercice.objects.filter(
+            exercice=exercice
+        ).first()
+        solde = opening_balance.montant if opening_balance else None
+        for mouvement in mouvements:
+            debit = mouvement["debit"]
+            credit = mouvement["credit"]
+            if debit is not None:
+                cumul_debit += debit
+            if credit is not None:
+                cumul_credit += credit
+            if solde is not None:
+                solde += (credit or Decimal("0.00")) - (debit or Decimal("0.00"))
+            mouvement["cumul_debit"] = cumul_debit
+            mouvement["cumul_credit"] = cumul_credit
+            mouvement["solde"] = solde
+
+        return mouvements
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        selected_exercise = kwargs.get(
+            "selected_exercise", self.get_selected_exercise()
+        )
+        selected_month = kwargs.get(
+            "selected_month", self.get_selected_month()
+        )
+        opening_balance = SoldeOuvertureExercice.objects.filter(
+            exercice=selected_exercise
+        ).first()
+        all_journal_entries = self.get_journal_entries(selected_exercise)
+        journal_entries = (
+            [
+                entry
+                for entry in all_journal_entries
+                if entry["date"].month == selected_month
+            ]
+            if selected_month is not None
+            else all_journal_entries
+        )
+        total_debits = sum(
+            (entry["debit"] or Decimal("0.00") for entry in journal_entries),
+            Decimal("0.00"),
+        )
+        total_credits = sum(
+            (entry["credit"] or Decimal("0.00") for entry in journal_entries),
+            Decimal("0.00"),
+        )
+        entries_through_period = (
+            [
+                entry
+                for entry in all_journal_entries
+                if entry["date"].month <= selected_month
+            ]
+            if selected_month is not None
+            else all_journal_entries
+        )
+        cumulative_debits = sum(
+            (
+                entry["debit"] or Decimal("0.00")
+                for entry in entries_through_period
+            ),
+            Decimal("0.00"),
+        )
+        cumulative_credits = sum(
+            (
+                entry["credit"] or Decimal("0.00")
+                for entry in entries_through_period
+            ),
+            Decimal("0.00"),
+        )
+        closing_balance = None
+        if opening_balance:
+            closing_balance = (
+                entries_through_period[-1]["solde"]
+                if entries_through_period
+                else opening_balance.montant
+            )
+        month_names = (
+            "Janvier",
+            "Février",
+            "Mars",
+            "Avril",
+            "Mai",
+            "Juin",
+            "Juillet",
+            "Août",
+            "Septembre",
+            "Octobre",
+            "Novembre",
+            "Décembre",
+        )
+        context.update(
+            {
+                "selected_exercise": selected_exercise,
+                "selected_month": selected_month,
+                "selected_month_name": (
+                    month_names[selected_month - 1] if selected_month else None
+                ),
+                "months": list(enumerate(month_names, start=1)),
+                "exercise_options": self.get_exercise_options(selected_exercise),
+                "opening_balance": opening_balance,
+                "opening_balance_form": kwargs.get(
+                    "opening_balance_form",
+                    SoldeOuvertureExerciceForm(
+                        instance=opening_balance,
+                        initial={"exercice": selected_exercise},
+                    ),
+                ),
+                "open_balance_modal": kwargs.get("open_balance_modal", False),
+                "journal_entries": journal_entries,
+                "total_debits": total_debits,
+                "total_credits": total_credits,
+                "cumulative_debits": cumulative_debits,
+                "cumulative_credits": cumulative_credits,
+                "closing_balance": closing_balance,
+            }
+        )
+        return context
+
+    def post(self, request, *args, **kwargs):
+        balance_id = request.POST.get("opening_balance_id")
+        instance = (
+            get_object_or_404(SoldeOuvertureExercice, pk=balance_id)
+            if balance_id
+            else None
+        )
+        form = SoldeOuvertureExerciceForm(request.POST, instance=instance)
+        selected_exercise = self.get_selected_exercise(
+            request.POST.get("exercice")
+        )
+        selected_month = self.get_selected_month(request.POST.get("mois"))
+        if form.is_valid():
+            solde = form.save()
+            messages.success(
+                request,
+                f"Le solde d'ouverture de l'exercice {solde.exercice} a été enregistré.",
+            )
+            redirect_url = f"{reverse_lazy('journal_tresorerie')}?exercice={solde.exercice}"
+            if selected_month is not None:
+                redirect_url += f"&mois={selected_month}"
+            return redirect(redirect_url)
+
+        return self.render_to_response(
+            self.get_context_data(
+                opening_balance_form=form,
+                open_balance_modal=True,
+                selected_exercise=selected_exercise,
+                selected_month=selected_month,
+            )
+        )
 
 
 class TresorerieCreateView(CreateView):
@@ -272,4 +553,3 @@ class OrdreRecetteDeleteView(DeleteView):
         response = super().post(request, *args, **kwargs)
         messages.success(request, f"L'ordre de recette {label} a été supprimé avec succès.")
         return response
-

@@ -1,6 +1,7 @@
 """Tests de l'application Trésorerie : pills Budget/Nature + actions CRUD."""
 
 from decimal import Decimal
+from datetime import date
 from pathlib import Path
 
 from django.conf import settings
@@ -8,7 +9,12 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from tresorerie.models import Tresorerie
+from tresorerie.models import (
+    OrdreRecette,
+    SoldeOuvertureExercice,
+    Tresorerie,
+)
+from tresorerie.services import get_situation_mensuelle
 from tresorerie.templatetags import ui_extras
 
 
@@ -87,6 +93,27 @@ class TresorerieVuesTests(TestCase):
         self.assertContains(response, "bootstrap-icons@1.13.1")
         self.assertContains(response, "JS/tresorerie-table.js")
         self.assertNotContains(response, "filterRow")
+
+    def test_liste_affiche_le_formulaire_dajout_dans_une_modale(self):
+        response = self.client.get(reverse("tresorerie_table"))
+        self.assertContains(response, 'data-bs-target="#tresorerieAddModal"')
+        self.assertContains(response, 'id="tresorerieAddModal"')
+        self.assertContains(
+            response, f'action="{reverse("tresorerie_table")}"'
+        )
+        self.assertContains(response, 'name="op"')
+        self.assertContains(response, 'name="date_arrive"')
+        self.assertContains(response, 'name="marche"')
+        self.assertNotContains(
+            response, f'href="{reverse("tresorerie_add")}"'
+        )
+
+    def test_bouton_modifier_ouvre_la_modale_pre_remplissable(self):
+        response = self.client.get(reverse("tresorerie_table"))
+        self.assertContains(response, 'data-bs-target="#tresorerieAddModal"')
+        self.assertContains(response, f'data-edit-id="{self.tresorerie.pk}"')
+        self.assertContains(response, 'data-op="1"')
+        self.assertContains(response, 'data-beneficiaires="TEST s.a.r.l"')
 
     def test_footer_non_fixe_et_structure_html_valide(self):
         response = self.client.get(reverse("tresorerie_table"))
@@ -167,6 +194,340 @@ class TresorerieVuesTests(TestCase):
         self.assertRedirects(response, reverse("tresorerie_table"))
         self.assertTrue(Tresorerie.objects.filter(op=2, exercice=2026).exists())
 
+    def test_creation_depuis_la_modale(self):
+        response = self.client.post(
+            reverse("tresorerie_table"),
+            {
+                "op": 2,
+                "ov": "260002",
+                "exercice": 2026,
+                "budget": "BUDGET INV",
+                "ligne_budgetaire": "980.912.41.21",
+                "code": 6527,
+                "nature": "BON COMMANDE",
+                "beneficiaires": "SOLA s.a.r.l",
+                "montant": "25360.78",
+                "date_rejet": "",
+                "num_rejet": "",
+                "date_visa": "",
+                "date_decaissement": "",
+                "marche": "",
+                "reference_document": "001/26",
+            },
+        )
+        self.assertRedirects(response, reverse("tresorerie_table"))
+        self.assertTrue(Tresorerie.objects.filter(op=2, exercice=2026).exists())
+
+    def test_modification_depuis_la_modale(self):
+        response = self.client.post(
+            reverse("tresorerie_table"),
+            {
+                "edit_id": self.tresorerie.pk,
+                "op": 3,
+                "ov": "260003",
+                "exercice": 2026,
+                "budget": "RAM EXP",
+                "ligne_budgetaire": "980.912.31.21",
+                "code": 6563,
+                "nature": "MARCHE",
+                "beneficiaires": "BENEFICIAIRE MODIFIE",
+                "montant": "13000.00",
+                "date_rejet": "",
+                "num_rejet": "",
+                "date_visa": "",
+                "date_decaissement": "",
+                "date_arrive": "",
+                "marche": "",
+                "reference_document": "",
+            },
+        )
+        self.assertRedirects(response, reverse("tresorerie_table"))
+        self.tresorerie.refresh_from_db()
+        self.assertEqual(self.tresorerie.op, 3)
+        self.assertEqual(self.tresorerie.beneficiaires, "BENEFICIAIRE MODIFIE")
+
+    def test_erreurs_dajout_reaffichent_la_modale_et_les_erreurs(self):
+        response = self.client.post(
+            reverse("tresorerie_table"),
+            {"op": 2},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["open_add_modal"])
+        self.assertIn("exercice", response.context["add_form"].errors)
+        self.assertContains(response, 'id="tresorerieAddModal"')
+
+    def test_erreurs_de_modification_reaffichent_la_modale(self):
+        response = self.client.post(
+            reverse("tresorerie_table"),
+            {"edit_id": self.tresorerie.pk, "op": ""},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context["modal_mode"], "edit")
+        self.assertEqual(
+            response.context["edit_instance"].pk, self.tresorerie.pk
+        )
+        self.assertIn("op", response.context["add_form"].errors)
+        self.assertContains(response, "Modifier l'OP")
+
+    def test_enregistrement_du_solde_douverture(self):
+        response = self.client.post(
+            reverse("journal_tresorerie"),
+            {
+                "exercice": 2026,
+                "montant": "12500.75",
+                "observation": "Solde bancaire au 31/12/2025",
+            },
+        )
+        self.assertRedirects(
+            response, f"{reverse('journal_tresorerie')}?exercice=2026"
+        )
+        solde = SoldeOuvertureExercice.objects.get(exercice=2026)
+        self.assertEqual(solde.montant, Decimal("12500.75"))
+
+    def test_erreur_de_solde_rouvre_le_formulaire(self):
+        response = self.client.post(
+            reverse("journal_tresorerie"),
+            {
+                "exercice": 2026,
+                "montant": "",
+                "observation": "",
+            },
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["open_balance_modal"])
+        self.assertIn("montant", response.context["opening_balance_form"].errors)
+        self.assertContains(response, "soldeOuvertureModal")
+
+    def test_solde_douverture_unique_par_exercice_et_modifiable(self):
+        solde = SoldeOuvertureExercice.objects.create(
+            exercice=2026, montant=Decimal("1000.00")
+        )
+        response = self.client.post(
+            reverse("journal_tresorerie"),
+            {
+                "opening_balance_id": solde.pk,
+                "exercice": 2026,
+                "montant": "2000.00",
+                "observation": "",
+            },
+        )
+        self.assertRedirects(
+            response, f"{reverse('journal_tresorerie')}?exercice=2026"
+        )
+        solde.refresh_from_db()
+        self.assertEqual(solde.montant, Decimal("2000.00"))
+
+    def test_situation_mensuelle_cumule_recettes_et_depenses_reelles(self):
+        SoldeOuvertureExercice.objects.create(
+            exercice=2026, montant=Decimal("1000.00")
+        )
+        Tresorerie.objects.create(
+            op=10,
+            exercice=2026,
+            budget="RAM EXP",
+            ligne_budgetaire="980.912.31.21",
+            code=6563,
+            nature="MARCHE",
+            beneficiaires="Fournisseur",
+            montant=Decimal("125.00"),
+            date_decaissement=date(2026, 1, 28),
+        )
+        OrdreRecette.objects.create(
+            exercice=2025,
+            num_ordre=1,
+            debiteur="Contribuable",
+            nature="ALIMENTATION DE LA TRESORERIE",
+            budget="EXPLOITATION",
+            date_encaissement=date(2026, 2, 3),
+            montant=Decimal("500.00"),
+        )
+
+        situation = get_situation_mensuelle(2026)
+        self.assertEqual(len(situation["mois"]), 12)
+        self.assertEqual(situation["mois"][0]["solde_ouverture"], Decimal("1000.00"))
+        self.assertEqual(situation["mois"][0]["solde_cloture"], Decimal("875.00"))
+        self.assertEqual(situation["mois"][1]["solde_ouverture"], Decimal("875.00"))
+        self.assertEqual(situation["mois"][1]["recettes"], Decimal("500.00"))
+        self.assertEqual(situation["mois"][1]["solde_cloture"], Decimal("1375.00"))
+        self.assertEqual(situation["solde_cloture"], Decimal("1375.00"))
+
+    def test_mouvements_sans_solde_initial_ne_donnent_pas_un_solde_fictif(self):
+        Tresorerie.objects.create(
+            op=11,
+            exercice=2026,
+            budget="RAM EXP",
+            ligne_budgetaire="980.912.31.21",
+            code=6563,
+            nature="MARCHE",
+            beneficiaires="Fournisseur",
+            montant=Decimal("125.00"),
+            date_decaissement=date(2026, 1, 28),
+        )
+        situation = get_situation_mensuelle(2026)
+        self.assertEqual(situation["mois"][0]["depenses"], Decimal("125.00"))
+        self.assertIsNone(situation["mois"][0]["solde_cloture"])
+        self.assertIsNone(situation["solde_cloture"])
+
+    def test_suivi_tresorerie_ne_contient_plus_la_situation_ni_le_solde(self):
+        response = self.client.get(reverse("tresorerie_table"))
+        self.assertNotContains(response, "Situation mensuelle de trésorerie")
+        self.assertNotContains(response, "soldeOuvertureModal")
+        self.assertNotContains(response, "Modifier le solde d'ouverture")
+
+    def test_journal_trie_les_mouvements_et_calcule_cumuls_et_soldes(self):
+        SoldeOuvertureExercice.objects.create(
+            exercice=2026, montant=Decimal("1000.00")
+        )
+        Tresorerie.objects.create(
+            op=12,
+            exercice=2026,
+            budget="RAM EXP",
+            ligne_budgetaire="980.912.31.21",
+            code=6563,
+            nature="MARCHE",
+            beneficiaires="Fournisseur",
+            montant=Decimal("125.00"),
+            date_decaissement=date(2026, 1, 5),
+            ov="260012",
+        )
+        Tresorerie.objects.create(
+            op=13,
+            exercice=2026,
+            budget="RAM EXP",
+            ligne_budgetaire="980.912.31.21",
+            code=6563,
+            nature="MARCHE",
+            beneficiaires="Fournisseur",
+            montant=Decimal("25.00"),
+            date_decaissement=date(2026, 1, 6),
+        )
+        OrdreRecette.objects.create(
+            exercice=2025,
+            num_ordre=1,
+            num_decision="DEC-01",
+            debiteur="Contribuable",
+            nature="ALIMENTATION DE LA TRESORERIE",
+            budget="EXPLOITATION",
+            date_encaissement=date(2026, 1, 5),
+            montant=Decimal("500.00"),
+        )
+        response = self.client.get(
+            reverse("journal_tresorerie"), {"exercice": 2026}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Journal de trésorerie")
+        self.assertContains(response, "N° Chèque/OV ou décision")
+        entries = response.context["journal_entries"]
+        self.assertEqual(len(entries), 3)
+        self.assertEqual([entry["date"] for entry in entries], [
+            date(2026, 1, 5),
+            date(2026, 1, 5),
+            date(2026, 1, 6),
+        ])
+        self.assertEqual(entries[0]["cumul_credit"], Decimal("500.00"))
+        self.assertEqual(entries[0]["solde"], Decimal("1500.00"))
+        self.assertEqual(entries[1]["cumul_debit"], Decimal("125.00"))
+        self.assertEqual(entries[1]["solde"], Decimal("1375.00"))
+        self.assertEqual(entries[2]["cumul_debit"], Decimal("150.00"))
+        self.assertEqual(entries[2]["solde"], Decimal("1350.00"))
+        self.assertEqual(response.context["closing_balance"], Decimal("1350.00"))
+        self.assertEqual(
+            response.context["total_credits"], Decimal("500.00")
+        )
+
+    def test_navbar_renvoie_vers_le_journal(self):
+        response = self.client.get(reverse("tresorerie_table"))
+        self.assertContains(response, f'href="{reverse("journal_tresorerie")}"')
+
+    def test_journal_sans_solde_ne_calcule_pas_un_solde_fictif(self):
+        response = self.client.get(
+            reverse("journal_tresorerie"), {"exercice": 2026}
+        )
+        self.assertIsNone(response.context["closing_balance"])
+        self.assertContains(response, "Aucun solde d'ouverture")
+
+    def test_journal_filtre_par_mois_avec_cumuls_annuels(self):
+        SoldeOuvertureExercice.objects.create(
+            exercice=2026, montant=Decimal("1000.00")
+        )
+        for num_ordre, month, amount in (
+            (1, 1, "80.00"),
+            (2, 3, "100.00"),
+        ):
+            OrdreRecette.objects.create(
+                exercice=2026,
+                num_ordre=num_ordre,
+                debiteur=f"Recette {month}",
+                nature="ALIMENTATION DE LA TRESORERIE",
+                budget="EXPLOITATION",
+                date_encaissement=date(2026, month, 5),
+                montant=Decimal(amount),
+            )
+        Tresorerie.objects.create(
+            op=301,
+            exercice=2026,
+            budget="RAM EXP",
+            ligne_budgetaire="980.912.31.21",
+            code=6563,
+            nature="MARCHE",
+            beneficiaires="Dépense mars",
+            montant=Decimal("20.00"),
+            date_decaissement=date(2026, 3, 10),
+        )
+        Tresorerie.objects.create(
+            op=302,
+            exercice=2026,
+            budget="RAM EXP",
+            ligne_budgetaire="980.912.31.21",
+            code=6563,
+            nature="MARCHE",
+            beneficiaires="Dépense avril",
+            montant=Decimal("30.00"),
+            date_decaissement=date(2026, 4, 10),
+        )
+
+        response = self.client.get(
+            reverse("journal_tresorerie"), {"exercice": 2026, "mois": 3}
+        )
+
+        self.assertEqual(response.context["selected_month"], 3)
+        self.assertEqual(response.context["selected_month_name"], "Mars")
+        entries = response.context["journal_entries"]
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(entries[0]["cumul_credit"], Decimal("180.00"))
+        self.assertEqual(entries[0]["solde"], Decimal("1180.00"))
+        self.assertEqual(entries[1]["cumul_debit"], Decimal("20.00"))
+        self.assertEqual(entries[1]["solde"], Decimal("1160.00"))
+        self.assertEqual(response.context["total_credits"], Decimal("100.00"))
+        self.assertEqual(response.context["total_debits"], Decimal("20.00"))
+        self.assertEqual(
+            response.context["cumulative_credits"], Decimal("180.00")
+        )
+        self.assertEqual(
+            response.context["cumulative_debits"], Decimal("20.00")
+        )
+        self.assertEqual(response.context["closing_balance"], Decimal("1160.00"))
+        self.assertNotContains(response, "Dépense avril")
+
+    def test_journal_affiche_recherche_et_pagination_datatables(self):
+        response = self.client.get(
+            reverse("journal_tresorerie"), {"exercice": 2026, "mois": "mars"}
+        )
+        contenu = response.content.decode()
+
+        self.assertIsNone(response.context["selected_month"])
+        self.assertIn('id="journalTresorerieTable"', contenu)
+        self.assertIn("Rechercher :", contenu)
+        self.assertIn("pageLength: 10", contenu)
+        self.assertIn("lengthMenu: [[10, 25, 50, -1]", contenu)
+        self.assertIn("Mois", contenu)
+
+    def test_suivi_paiement_template_reste_inchange(self):
+        response = self.client.get(reverse("suivi_paiement"))
+
+        self.assertNotContains(response, 'id="mouvementsMensuelsTable"')
+        self.assertNotContains(response, 'id="exerciceMouvements"')
+
 
 
 class DataTablesLangueTests(TestCase):
@@ -216,4 +577,3 @@ class DataTablesLangueTests(TestCase):
         ):
             with self.subTest(libelle=libelle):
                 self.assertNotIn(libelle, contenu)
-

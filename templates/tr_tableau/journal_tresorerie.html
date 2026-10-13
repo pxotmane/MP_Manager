@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% load static %}
+{% load django_bootstrap5 %}
+{% load ui_extras %}
+{% load l10n %}
+
+{% block title %}Journal de trésorerie — MP Manager{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <div>
+        <h4 class="mb-0 text-mp-blue">Journal de trésorerie</h4>
+        <p class="text-muted-soft small mb-0">Encaissements et décaissements réels par exercice et par mois</p>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <form method="get" action="{% url 'journal_tresorerie' %}" class="d-flex align-items-center gap-2">
+            <label for="exerciceJournal" class="form-label mb-0 fw-semibold">Exercice</label>
+            <select id="exerciceJournal" name="exercice" class="form-select form-select-sm">
+                {% for exercice in exercise_options %}
+                <option value="{{ exercice }}" {% if exercice == selected_exercise %}selected{% endif %}>{{ exercice }}</option>
+                {% endfor %}
+            </select>
+            <label for="moisJournal" class="form-label mb-0 fw-semibold">Mois</label>
+            <select id="moisJournal" name="mois" class="form-select form-select-sm">
+                <option value="" {% if not selected_month %}selected{% endif %}>Tous</option>
+                {% for numero, nom in months %}
+                <option value="{{ numero }}" {% if numero == selected_month %}selected{% endif %}>{{ nom }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-sm btn-outline-primary">Afficher</button>
+        </form>
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#soldeOuvertureModal">
+            <i class="bi bi-wallet2 me-1"></i>
+            {% if opening_balance %}Modifier le solde d'ouverture{% else %}Saisir le solde d'ouverture{% endif %}
+        </button>
+        <button type="button" class="btn btn-outline-secondary" onclick="window.print()" aria-label="Imprimer le journal">
+            <i class="bi bi-printer me-1"></i>Imprimer
+        </button>
+    </div>
+</div>
+
+{% bootstrap_messages %}
+
+{% if opening_balance %}
+<div class="alert alert-info py-2">
+    Solde au 31/12/{{ selected_exercise|add:"-1" }} :
+    <strong>{{ opening_balance.montant|format_montant }} DH</strong>
+</div>
+{% else %}
+<div class="alert alert-warning py-2">
+    Aucun solde d'ouverture n'est renseigné pour {{ selected_exercise }}.
+    Le solde courant restera indisponible jusqu'à sa saisie.
+</div>
+{% endif %}
+
+<div class="table-card">
+    <div class="table-responsive">
+        <table id="journalTresorerieTable" class="table table-striped table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th rowspan="2">N° OR</th>
+                    <th rowspan="2">N° OP</th>
+                    <th rowspan="2">Date du mouvement</th>
+                    <th rowspan="2">N° Chèque/OV ou décision</th>
+                    <th colspan="2" class="text-center">Débits</th>
+                    <th colspan="2" class="text-center">Crédits</th>
+                    <th rowspan="2" class="text-end">Solde (DH)</th>
+                </tr>
+                <tr>
+                    <th class="text-end">Montant</th>
+                    <th class="text-end">Cumul</th>
+                    <th class="text-end">Montant</th>
+                    <th class="text-end">Cumul</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr class="table-light fw-semibold">
+                    <td>Solde d'ouverture</td>
+                    <td></td>
+                    <td></td>
+                    <td data-order="{{ selected_exercise|add:'-1' }}-01-01">31/12/{{ selected_exercise|add:"-1" }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="text-end">{% if opening_balance %}{{ opening_balance.montant|format_montant }}{% else %}—{% endif %}</td>
+                </tr>
+                {% for entry in journal_entries %}
+                <tr>
+                    <td>{{ entry.or_number|default_if_none:"" }}</td>
+                    <td>{{ entry.op_number|default_if_none:"" }}</td>
+                    <td data-order="{{ entry.date|date:'Y-m-d' }}">{{ entry.date|date:"d/m/Y" }}</td>
+                    <td>{{ entry.reference|default:"—" }}</td>
+                    <td class="text-end">{% if entry.debit is not None %}{{ entry.debit|format_montant }}{% endif %}</td>
+                    <td class="text-end">{{ entry.cumul_debit|format_montant }}</td>
+                    <td class="text-end">{% if entry.credit is not None %}{{ entry.credit|format_montant }}{% endif %}</td>
+                    <td class="text-end">{{ entry.cumul_credit|format_montant }}</td>
+                    <td class="text-end fw-semibold">{% if entry.solde is not None %}{{ entry.solde|format_montant }}{% else %}—{% endif %}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="fw-bold">
+                    <th colspan="4">Total / {% if selected_month_name %}solde à fin {{ selected_month_name|lower }}{% else %}clôture de l'exercice{% endif %}</th>
+                    <td class="text-end">{{ total_debits|format_montant }}</td>
+                    <td class="text-end">{{ cumulative_debits|format_montant }}</td>
+                    <td class="text-end">{{ total_credits|format_montant }}</td>
+                    <td class="text-end">{{ cumulative_credits|format_montant }}</td>
+                    <td class="text-end">{% if closing_balance is not None %}{{ closing_balance|format_montant }}{% else %}—{% endif %}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+<div class="modal fade" id="soldeOuvertureModal" tabindex="-1" aria-labelledby="soldeOuvertureModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+            <div class="modal-header border-bottom py-3">
+                <h2 class="modal-title h5 text-mp-blue fw-semibold" id="soldeOuvertureModalTitle">
+                    <i class="bi bi-wallet2 me-2"></i>Solde d'ouverture de l'exercice
+                </h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <form method="post" action="{% url 'journal_tresorerie' %}" novalidate>
+                {% csrf_token %}
+                <input type="hidden" name="opening_balance_id" value="{{ opening_balance_form.instance.pk|default_if_none:'' }}">
+                <input type="hidden" name="mois" value="{{ selected_month|default_if_none:'' }}">
+                <div class="modal-body p-4">
+                    {% bootstrap_form opening_balance_form %}
+                    <div class="form-text">
+                        Ce montant correspond au solde bancaire constaté au 31 décembre de l'année précédant l'exercice.
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-matte-primary btn-sm">
+                        <i class="bi bi-check2-circle me-1"></i>Enregistrer le solde
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% if open_balance_modal %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        bootstrap.Modal.getOrCreateInstance(
+            document.getElementById("soldeOuvertureModal")
+        ).show();
+    });
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script>
+    $(function () {
+        $('#journalTresorerieTable').DataTable({
+            language: {
+                decimal: ',',
+                thousands: ' ',
+                emptyTable: 'Aucune donnée disponible dans le tableau',
+                loadingRecords: 'Chargement...',
+                processing: 'Traitement...',
+                zeroRecords: 'Aucune entrée correspondante trouvée',
+                info: 'Affichage de _START_ à _END_ sur _TOTAL_ entrées',
+                infoEmpty: 'Affichage de 0 à 0 sur 0 entrées',
+                infoFiltered: '(filtrées depuis un total de _MAX_ entrées)',
+                lengthMenu: 'Afficher _MENU_ lignes',
+                search: 'Rechercher :',
+                paginate: {
+                    first: 'Première',
+                    last: 'Dernière',
+                    next: 'Suivante',
+                    previous: 'Précédente'
+                }
+            },
+            pageLength: 25,
+            lengthMenu: [[25, 50, -1], [25, 50, 'Toutes']],
+            order: [],
+            autoWidth: false
+        });
+    });
+</script>
+{% endblock %}

@@ -1,5 +1,76 @@
 from django import forms
-from .models import BudgetExercice, OrdreRecette
+from .models import (
+    BudgetExercice,
+    OrdreRecette,
+    SoldeOuvertureExercice,
+    Tresorerie,
+)
+
+
+class TresorerieForm(forms.ModelForm):
+    class Meta:
+        model = Tresorerie
+        fields = [
+            "date_arrive",
+            "op",
+            "ov",
+            "exercice",
+            "budget",
+            "ligne_budgetaire",
+            "code",
+            "nature",
+            "marche",
+            "reference_document",
+            "beneficiaires",
+            "montant",
+            "date_rejet",
+            "num_rejet",
+            "date_visa",
+            "date_decaissement",
+        ]
+        widgets = {
+            "date_arrive": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "op": forms.NumberInput(attrs={"class": "form-control"}),
+            "ov": forms.TextInput(attrs={"class": "form-control"}),
+            "exercice": forms.NumberInput(attrs={"class": "form-control"}),
+            "budget": forms.Select(attrs={"class": "form-select"}),
+            "ligne_budgetaire": forms.TextInput(attrs={"class": "form-control"}),
+            "code": forms.NumberInput(attrs={"class": "form-control"}),
+            "nature": forms.Select(attrs={"class": "form-select"}),
+            "marche": forms.Select(attrs={"class": "form-select"}),
+            "reference_document": forms.TextInput(attrs={"class": "form-control"}),
+            "beneficiaires": forms.TextInput(attrs={"class": "form-control"}),
+            "montant": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01"}
+            ),
+            "date_rejet": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "num_rejet": forms.NumberInput(attrs={"class": "form-control"}),
+            "date_visa": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+            "date_decaissement": forms.DateInput(
+                attrs={"class": "form-control", "type": "date"}
+            ),
+        }
+
+
+class SoldeOuvertureExerciceForm(forms.ModelForm):
+    class Meta:
+        model = SoldeOuvertureExercice
+        fields = ["exercice", "montant", "observation"]
+        widgets = {
+            "exercice": forms.NumberInput(
+                attrs={"class": "form-control", "min": "1900", "max": "9999"}
+            ),
+            "montant": forms.NumberInput(
+                attrs={"class": "form-control", "step": "0.01"}
+            ),
+            "observation": forms.TextInput(attrs={"class": "form-control"}),
+        }
 
 
 class BudgetExerciceForm(forms.ModelForm):

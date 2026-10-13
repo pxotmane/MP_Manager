@@ -1,12 +1,29 @@
 {% extends "base.html" %}
 {% load static %}
 {% load ui_extras %}
+{% load django_bootstrap5 %}
+{% load l10n %}
 
 {% block title %}Suivi de trésorerie — MP Manager{% endblock %}
 
 {% block extra_css %}
 <!-- CSS DataTables pour Bootstrap 5 -->
 <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+<style>
+    .tresorerie-modal .modal-content > form {
+        display: flex;
+        flex: 1 1 auto;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .tresorerie-modal .modal-body {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -16,11 +33,14 @@
             <h1 class="h3 mb-0 text-mp-blue">Suivi de Trésorerie</h1>
             <p class="text-muted-soft small mb-0">Ordres de paiement, visas et décaissements</p>
         </div>
-        <!-- Ajout d'un nouvel ordre de paiement -->
-        <a href="{% url 'tresorerie_add' %}" class="btn btn-matte-primary">
-            <i class="bi bi-plus-lg me-1"></i>Ajouter une OP
-        </a>
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-matte-primary" data-bs-toggle="modal" data-bs-target="#tresorerieAddModal">
+                <i class="bi bi-plus-lg me-1"></i>Ajouter une OP
+            </button>
+        </div>
     </div>
+
+    {% bootstrap_messages %}
 
     <div class="table-card">
         <!-- Conteneur de défilement : le tableau, s'il est plus large que la carte,
@@ -92,12 +112,30 @@
                              et figée à droite pendant le défilement horizontal (CSS). -->
                         <td class="text-center text-nowrap actions-col">
                             <div class="d-inline-flex gap-1">
-                                <a href="{% url 'tresorerie_edit' tresorerie.pk %}"
+                                <button type="button"
                                    class="btn btn-soft-primary btn-icon rounded-3"
-                                   data-bs-toggle="tooltip" data-bs-placement="top" title="Modifier"
+                                   data-bs-toggle="modal" data-bs-target="#tresorerieAddModal"
+                                   data-edit-id="{{ tresorerie.pk }}"
+                                   data-date-arrive="{{ tresorerie.date_arrive|date:'Y-m-d' }}"
+                                   data-op="{{ tresorerie.op }}"
+                                   data-ov="{{ tresorerie.ov|default_if_none:'' }}"
+                                   data-exercice="{{ tresorerie.exercice }}"
+                                   data-budget="{{ tresorerie.budget }}"
+                                   data-ligne-budgetaire="{{ tresorerie.ligne_budgetaire }}"
+                                   data-code="{{ tresorerie.code }}"
+                                   data-nature="{{ tresorerie.nature }}"
+                                   data-marche="{{ tresorerie.marche_id|default_if_none:'' }}"
+                                   data-reference-document="{{ tresorerie.reference_document|default_if_none:'' }}"
+                                   data-beneficiaires="{{ tresorerie.beneficiaires }}"
+                                   data-montant="{{ tresorerie.montant|unlocalize }}"
+                                   data-date-rejet="{{ tresorerie.date_rejet|date:'Y-m-d' }}"
+                                   data-num-rejet="{{ tresorerie.num_rejet|default_if_none:'' }}"
+                                   data-date-visa="{{ tresorerie.date_visa|date:'Y-m-d' }}"
+                                   data-date-decaissement="{{ tresorerie.date_decaissement|date:'Y-m-d' }}"
+                                   data-bs-placement="top" title="Modifier"
                                    aria-label="Modifier l'OP {{ tresorerie.op }}">
                                     <i class="bi bi-pencil-square"></i>
-                                </a>
+                                </button>
                                 <form method="post" action="{% url 'tresorerie_delete' tresorerie.pk %}"
                                       class="js-delete-form d-inline-flex"
                                       data-label="OP {{ tresorerie.op }}/{{ tresorerie.exercice }} — {{ tresorerie.beneficiaires }}">
@@ -123,6 +161,32 @@
         </div>
     </div>
 
+    <div class="modal fade tresorerie-modal" id="tresorerieAddModal" tabindex="-1" aria-labelledby="tresorerieAddModalTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+            <div class="modal-content rounded-3 shadow">
+                <div class="modal-header border-bottom py-3">
+                    <h5 class="modal-title text-mp-blue fw-semibold" id="tresorerieAddModalTitle">
+                        {% if modal_mode == "edit" %}<i class="bi bi-pencil-square me-2"></i>Modifier l'OP{% else %}<i class="bi bi-plus-circle me-2"></i>Ajouter une OP{% endif %}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+                </div>
+                <form id="tresorerieModalForm" method="post" action="{% url 'tresorerie_table' %}" novalidate>
+                    {% csrf_token %}
+                    <input type="hidden" name="edit_id" id="tresorerieEditId" value="{% if edit_instance %}{{ edit_instance.pk }}{% endif %}">
+                    <div class="modal-body p-4">
+                        {% bootstrap_form add_form %}
+                    </div>
+                    <div class="modal-footer bg-light py-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Annuler</button>
+                        <button type="submit" class="btn btn-matte-primary btn-sm">
+                            <i class="bi bi-check2-circle me-1"></i>{% if modal_mode == "edit" %}Enregistrer les modifications{% else %}Enregistrer{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -132,4 +196,65 @@
 <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
 <!-- Script du tableau : filtres par colonne + colonne Actions isolée -->
 <script src="{% static 'JS/tresorerie-table.js' %}"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = document.getElementById("tresorerieAddModal");
+        const form = document.getElementById("tresorerieModalForm");
+        const editId = document.getElementById("tresorerieEditId");
+        const title = document.getElementById("tresorerieAddModalTitle");
+        const submitLabel = form.querySelector('button[type="submit"]');
+
+        modal.addEventListener("show.bs.modal", function (event) {
+            const trigger = event.relatedTarget;
+            if (!trigger || !trigger.hasAttribute("data-edit-id")) {
+                {% if open_add_modal %}return;{% endif %}
+                form.reset();
+                editId.value = "";
+                title.innerHTML = '<i class="bi bi-plus-circle me-2"></i>Ajouter une OP';
+                submitLabel.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Enregistrer';
+                return;
+            }
+
+            const fields = {
+                date_arrive: "dateArrive",
+                op: "op",
+                ov: "ov",
+                exercice: "exercice",
+                budget: "budget",
+                ligne_budgetaire: "ligneBudgetaire",
+                code: "code",
+                nature: "nature",
+                marche: "marche",
+                reference_document: "referenceDocument",
+                beneficiaires: "beneficiaires",
+                montant: "montant",
+                date_rejet: "dateRejet",
+                num_rejet: "numRejet",
+                date_visa: "dateVisa",
+                date_decaissement: "dateDecaissement"
+            };
+            form.reset();
+            Object.entries(fields).forEach(function ([name, dataKey]) {
+                form.elements.namedItem(name).value = trigger.dataset[dataKey] || "";
+            });
+            editId.value = trigger.dataset.editId;
+            title.innerHTML = '<i class="bi bi-pencil-square me-2"></i>';
+            title.append(document.createTextNode(
+                "Modifier l'OP " + trigger.dataset.op + "/" + trigger.dataset.exercice
+            ));
+            submitLabel.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Enregistrer les modifications';
+        });
+
+        {% if open_add_modal %}
+        {% if modal_mode == "edit" %}
+        title.innerHTML = '<i class="bi bi-pencil-square me-2"></i>';
+        title.append(document.createTextNode(
+            "Modifier l'OP {{ edit_instance.op }}/{{ edit_instance.exercice }}"
+        ));
+        submitLabel.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Enregistrer les modifications';
+        {% endif %}
+        bootstrap.Modal.getOrCreateInstance(modal).show();
+        {% endif %}
+    });
+</script>
 {% endblock %}
