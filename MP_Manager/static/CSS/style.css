@@ -90,6 +90,11 @@ nav ul li a {
     border-collapse: collapse;
     margin-bottom: 0.75rem;
     background-color: #ffffff;
+    --bs-table-color: var(--mp-text);
+    --bs-table-bg: #ffffff;
+    --bs-table-border-color: var(--mp-border);
+    --bs-table-striped-bg: #f8f9fa;
+    --bs-table-hover-bg: #eef5fb;
 }
 
 .table th,
@@ -101,6 +106,7 @@ nav ul li a {
 
 .table thead th {
     background-color: var(--mp-blue);
+    /* background-image: linear-gradient(180deg, var(--mp-blue) 0%, var(--mp-blue-600) 100%); */
     color: #ffffff;
     font-weight: 600;
     font-size: 0.8rem;
@@ -108,6 +114,13 @@ nav ul li a {
     letter-spacing: 0.03em;
     border-color: #16374f;
     white-space: nowrap;
+    vertical-align: middle;
+}
+
+.table thead {
+    --bs-table-color: #ffffff;
+    --bs-table-bg: var(--mp-blue);
+    --bs-table-border-color: #16374f;
 }
 
 .table tbody tr:nth-child(even) {
@@ -129,23 +142,19 @@ nav ul li a {
 #tresorerieTable,
 #marcheTable { min-width: 100%; }
 
-#tresorerieTable thead tr:first-child th,
-#marcheTable thead tr:first-child th {
-    background-image: linear-gradient(180deg, var(--mp-blue) 0%, var(--mp-blue-600) 100%);
-}
-
-#tresorerieTable thead tr.filters th,
-#marcheTable thead tr.filters th {
+.table thead tr.filters th {
     background-color: var(--mp-bg);
     background-image: none;
+    color: var(--mp-text);
+    --bs-table-bg: var(--mp-bg);
+    --bs-table-color: var(--mp-text);
     text-transform: none;
     letter-spacing: normal;
     border-bottom: 1px solid var(--mp-border);
     padding: 6px 8px;
 }
 
-#tresorerieTable thead tr.filters input,
-#marcheTable thead tr.filters input {
+.table thead tr.filters input {
     font-size: 0.78rem;
     min-width: 70px;
 }
@@ -362,8 +371,117 @@ nav ul li a {
 .badge-matte-blue-solid { background-color: var(--mp-blue); color: #ffffff; }
 
 /* 8. Cartes (formulaires) ------------------------------------------------ */
-.card { border-color: var(--mp-border); }
+.card {
+    border-color: var(--mp-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 4px 16px rgba(16, 24, 40, 0.06);
+}
 .card-header { background-color: #ffffff; }
 
-  
+/* 9. Contrôles communs --------------------------------------------------- */
+.btn {
+    border-radius: 0.5rem;
+    font-weight: 500;
+    line-height: 1.35;
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
 
+.btn-primary {
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+    color: #ffffff;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--mp-blue-dark);
+    border-color: var(--mp-blue-dark);
+    color: #ffffff;
+}
+
+.btn-outline-primary {
+    color: var(--mp-blue);
+    border-color: #CBDBE9;
+}
+.btn-outline-primary:hover,
+.btn-outline-primary:focus {
+    color: #ffffff;
+    background-color: var(--mp-blue);
+    border-color: var(--mp-blue);
+}
+
+.btn-outline-secondary {
+    color: var(--mp-slate);
+    border-color: #DCE2EA;
+}
+.btn-outline-secondary:hover,
+.btn-outline-secondary:focus {
+    color: var(--mp-blue-dark);
+    background-color: #EEF1F5;
+    border-color: #CBD3DE;
+}
+
+.btn-outline-danger {
+    color: #8C2F2F;
+    border-color: #EED2D2;
+}
+.btn-outline-danger:hover,
+.btn-outline-danger:focus {
+    color: #ffffff;
+    background-color: #8C2F2F;
+    border-color: #8C2F2F;
+}
+
+.btn-light {
+    color: var(--mp-blue);
+    background-color: #ffffff;
+    border-color: var(--mp-border);
+}
+.btn-light:hover,
+.btn-light:focus {
+    color: var(--mp-blue-dark);
+    background-color: var(--mp-bg);
+    border-color: #CBD3DE;
+}
+
+.btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(23, 64, 94, 0.2);
+}
+
+.form-control,
+.form-select {
+    border-color: var(--mp-border);
+    border-radius: 0.5rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 2px rgba(23, 64, 94, 0.2) !important;
+    border-color: #86b7fe !important;
+    outline: none !important;
+}
+
+.input-group-text {
+    border-color: var(--mp-border);
+    color: var(--mp-slate);
+}
+
+.modal-content {
+    border: 1px solid var(--mp-border);
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.14);
+}
+
+.modal-header,
+.modal-footer {
+    border-color: var(--mp-border);
+}
+
+.modal-footer.bg-light {
+    background-color: var(--mp-bg) !important;
+}
+
+main > h1 {
+    color: var(--mp-blue);
+    font-size: calc(1.3rem + 0.6vw);
+}
