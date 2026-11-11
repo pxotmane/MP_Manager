@@ -7,7 +7,8 @@
 
 {% block extra_css %}
 <!-- CSS DataTables pour Bootstrap 5 -->
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+{# <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css"> #}
+<link rel="stylesheet" type="text/css" href="{% static 'vendor/datatables/dataTables.bootstrap5.min.css' %}">
 <style>
     /* Carte synthèse du Total des Recettes */
     .recette-kpi-card {
@@ -346,9 +347,12 @@
 
 {% block extra_js %}
 <!-- jQuery et DataTables (Bootstrap 5) -->
-<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
-<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+{# <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script> #}
+{# <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script> #}
+{# <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script> #}
+<script src="{% static 'vendor/jquery/jquery-3.7.0.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/jquery.dataTables.min.js' %}"></script>
+<script src="{% static 'vendor/datatables/dataTables.bootstrap5.min.js' %}"></script>
 <!-- Script du tableau Situation des Recettes -->
 <script src="{% static 'JS/recettes-table.js' %}"></script>
 {% endblock %}
