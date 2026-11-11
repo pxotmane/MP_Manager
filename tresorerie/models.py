@@ -58,7 +58,9 @@ class SoldeOuvertureExercice(models.Model):
         decimal_places=2,
         verbose_name="Solde au 31/12 de l'exercice précédent (DH)",
     )
-    observation = models.CharField(max_length=255, blank=True, verbose_name="Observation")
+    observation = models.CharField(
+        max_length=255, blank=True, verbose_name="Observation"
+    )
 
     class Meta:
         ordering = ["-exercice"]
@@ -73,21 +75,22 @@ class Tresorerie(models.Model):
     """Feuille Excel TRESORERIE -- suivi d'un ordre de paiement (OP) jusqu'au décaissement."""
 
     class TypeBudget(models.TextChoices):
-        RAM_EXP = "RAM EXP", "RAM Exploitation"
-        RAM_INV = "RAM INV", "RAM Investissement"
-        BUDGET_EXP = "BUDGET EXP", "Budget Exploitation"
-        BUDGET_INV = "BUDGET INV", "Budget Investissement"
+        RAM_EXP = "RAM EXP", "RAM Exp"
+        RAM_INV = "RAM INV", "RAM Inv"
+        BUDGET_EXP = "BUDGET EXP", "BUD Exp"
+        BUDGET_INV = "BUDGET INV", "BUD Inv"
 
     class Nature(models.TextChoices):
         MARCHE = "MARCHE", "Marché"
-        HRS_SUPP = "HEURES_SUPP", "Heures supplémentaires"
-        BN_CMD = "BON COMMANDE", "Bon de commande"
-        CNV = "CONVENTION", "Convention"
-        FR_AUTO = "FRAIS AUTORISATION", "Frais autorisations"
+        HRS_SUPP = "HEURES_SUPP", "Heures supp"
+        BN_CMD = "BON COMMANDE", "B.C"
+        CNV = "CONVENTION", "Conv"
+        FR_AUTO = "FRAIS AUTORISATION", "F.A"
         INSER = "INSERSTION", "Insertion"
-        IND_DPL = "INDEMNITE DEPLACEMENT", "Indemnité de déplacement"
+        IND_DPL = "INDEMNITE DEPLACEMENT", "I.D"
         # AUTRE = "AUTRE", "Autre"  # Liste incomplète dans la source ("Marché, Heures supp...") -- à compléter.
-    date_arrive = models.DateField(null=True, blank=True, verbose_name="Date d'arrivée")    
+
+    date_arrive = models.DateField(null=True, blank=True, verbose_name="Date d'arrivée")
     op = models.PositiveIntegerField(verbose_name="Numéro d'OP")
     ov = models.CharField(
         max_length=30,

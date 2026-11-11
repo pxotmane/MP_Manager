@@ -348,7 +348,7 @@ nav ul li a {
 }
 
 /* Pastille de couleur discrete (remplace les icones dans les badges) */
-.badge-matte::before {
+/* .badge-matte::before {
     content: "";
     flex: 0 0 auto;
     width: 0.4rem;
@@ -356,7 +356,7 @@ nav ul li a {
     margin-right: 0.4rem;
     border-radius: 50%;
     background-color: currentColor;
-}
+} */
 .badge-matte-green { background-color: #E7F1EA; color: #2E6B4F; border-color: #C9E0D2; }
 .badge-matte-blue { background-color: #E8EFF6; color: #17405E; border-color: #CBDBE9; }
 .badge-matte-teal { background-color: #E6F1F1; color: #2A6F73; border-color: #C6E0E0; }
